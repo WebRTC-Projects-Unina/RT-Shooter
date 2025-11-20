@@ -1,4 +1,8 @@
 import { useState } from "react";
+import { io } from "socket.io-client";
+
+// Connetti al dispatcher
+const socket = io("http://localhost:8080");
 
 function CreateRoomPage({ onCancel, onCreate }) {
   const [roomName, setRoomName] = useState("");
@@ -8,21 +12,19 @@ function CreateRoomPage({ onCancel, onCreate }) {
   function createRoom() {
     if (!roomName.trim()) return;
 
-    const newRoom = {
-      id: Date.now(),
+    // INVIO AL SERVER
+    socket.emit("create_room", {
       name: roomName,
       password: password,
       level: level,
-      creator: "You",
-      hasPassword: password.trim() !== ""
-    };
+    });
 
-    onCreate(newRoom);
+    // Torna alla lobby (non serve passare dati locali)
+    onCreate();
   }
 
   return (
     <div className="create-room-page">
-
       <h2>Create a New Room</h2>
 
       <div className="form-block">
@@ -56,7 +58,6 @@ function CreateRoomPage({ onCancel, onCreate }) {
         <button onClick={createRoom}>Create</button>
         <button onClick={onCancel}>Cancel</button>
       </div>
-
     </div>
   );
 }
