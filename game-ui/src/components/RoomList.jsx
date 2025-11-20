@@ -3,7 +3,7 @@ import { io } from "socket.io-client";
 
 const socket = io("http://localhost:8080");
 
-function RoomList({ onBack, onCreateRoom }) {
+function RoomList({nickname,onBack, onCreateRoom }) {
 
   const [rooms, setRooms] = useState([]);
 
@@ -24,15 +24,20 @@ function RoomList({ onBack, onCreateRoom }) {
   return (
     <div className="lobby-layout">
       
-      <div className="create-room-panel">
-        <h3>Room Options</h3>
+      <div className="welcome-bar">
+      <span>Welcome, <strong>{nickname}</strong></span>
+      </div>
 
+      <h3>Room Options</h3>
+
+      <div className="create-room-panel">
         <button className="go-create-btn" onClick={onCreateRoom}>
           Create New Room
         </button>
       </div>
 
-      {/* SEZIONE DESTRA: TABELLA DELLE ROOM */}
+
+      {/*TABELLA DELLE ROOM */}
       <div className="room-list-container">
         <h2>Available Rooms</h2>
 
@@ -55,6 +60,8 @@ function RoomList({ onBack, onCreateRoom }) {
 
                 <span className="col-status">
                   {room.hasPassword ? "🔒 Private" : "🔓 Open"}
+                  {" · "}
+                  {(room.players?.length || 0)}/{room.maxPlayers}
                 </span>
 
                 <span className="col-action">

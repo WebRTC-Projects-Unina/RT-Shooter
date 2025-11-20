@@ -1,8 +1,9 @@
+/* ===== BASE ===== */
 body {
   margin: 0;
   background: radial-gradient(circle at top, #2a2d43, #0e0f19);
-  font-family: Arial, sans-serif;
-  color: white;
+  font-family: "Inter", Arial, sans-serif;
+  color: #e6eaff;
 }
 
 .app {
@@ -12,13 +13,21 @@ body {
   align-items: center;
 }
 
+/* ===== MAIN MENU ===== */
 .main-menu {
   text-align: center;
+  background: #1e2030;
+  padding: 3rem;
+  border-radius: 14px;
+  border: 2px solid #2f3b82;
+  box-shadow: 0 0 25px rgba(66,105,255,0.35);
 }
 
 .main-menu h1 {
-  margin-bottom: 2rem;
-  font-size: 3rem;
+  font-size: 2.6rem;
+  margin-bottom: 2.5rem;
+  color: white;
+  letter-spacing: 1px;
 }
 
 .menu-buttons {
@@ -28,105 +37,45 @@ body {
 }
 
 .menu-buttons button {
-  padding: 12px 20px;
-  font-size: 1.2rem;
+  padding: 14px 20px;
+  font-size: 1.25rem;
   border: none;
   border-radius: 10px;
   cursor: pointer;
-  background-color: #3949ab;
+  background: #5865f2;
   color: white;
+  font-weight: bold;
   transition: 0.2s ease;
 }
 
 .menu-buttons button:hover:not(:disabled) {
-  background-color: #5c6bc0;
+  background: #4752c4;
   transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.4);
 }
 
-.menu-buttons button:disabled {
-  background-color: #555;
-  cursor: not-allowed;
-}
-
-.screen {
-  text-align: center;
-}
-
-.screen button {
-  margin-top: 20px;
-  padding: 10px 18px;
-  background: #3949ab;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.room-list {
-  text-align: center;
-}
-
-.rooms {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-
-.room-card {
-  background: #1f2235;
-  padding: 1rem;
-  border-radius: 8px;
-  border: 1px solid #3949ab;
-}
-
-.room-card button {
-  margin-top: 10px;
-  padding: 8px 14px;
-  background: #3949ab;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  color: white;
-}
-
-.create-room {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 2rem;
-}
-
-.create-room input {
-  padding: 8px;
-  width: 220px;
-  border-radius: 6px;
-  border: none;
-}
-
-.back-btn {
-  padding: 10px 18px;
-  background: #555;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  color: white;
-}
-
-
+/* ===== LOBBY CONTAINER ===== */
 .room-list-container {
-  text-align: center;
-  max-width: 900px;
-  margin: 0 auto;
+  background: #1e2030;
+  padding: 2rem;
+  border-radius: 14px;
+  border: 2px solid #2f3b82;
+  box-shadow: 0 0 25px rgba(66,105,255,0.35);
+  width: 850px;
 }
 
+.room-list-container h2 {
+  margin-bottom: 1.5rem;
+  color: white;
+  font-size: 1.8rem;
+}
+
+/* ===== ROOM TABLE ===== */
 .room-table {
   background: #141627;
   border: 2px solid #2f3b82;
   border-radius: 10px;
   padding: 1rem;
-  margin-bottom: 2rem;
 }
 
 .room-table-header,
@@ -134,116 +83,87 @@ body {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr;
   padding: 0.8rem 0.5rem;
-  border-bottom: 1px solid #2f3b82;
   align-items: center;
 }
 
 .room-table-header {
-  font-weight: bold;
   background: #20233d;
   border-radius: 6px;
+  font-weight: bold;
+  color: #cdd2ff;
+}
+
+.room-row {
+  border-bottom: 1px solid #2f3b82;
 }
 
 .room-row:nth-child(even) {
   background-color: #1a1c30;
 }
 
-.room-row span {
-  font-size: 1rem;
-}
-
+/* ===== JOIN BUTTON ===== */
 .join-btn {
-  padding: 6px 12px;
-  background: #3949ab;
+  padding: 8px 16px;
+  background: #5865f2;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   color: white;
   cursor: pointer;
+  transition: 0.2s ease;
 }
 
 .join-btn:hover {
-  background: #5c6bc0;
+  background: #4752c4;
+  transform: translateY(-2px);
 }
 
-.create-room {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 2rem;
-}
-
-.create-room input {
-  padding: 8px;
-  width: 240px;
-  border-radius: 6px;
-  border: none;
-}
-
-.back-btn {
-  padding: 10px 18px;
-  background: #555;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  color: white;
-}
-
+/* ===== CREATE ROOM PANEL ===== */
 .go-create-btn {
   width: 100%;
   padding: 12px 0;
-  font-size: 1.1rem;
-  font-weight: bold;
-  background: linear-gradient(135deg, #3949ab, #5c6bc0);
+  margin: 1.3rem 0;
+  background: #5865f2;
+  border-radius: 10px;
   border: none;
-  border-radius: 8px;
-  cursor: pointer;
+  font-size: 1.2rem;
   color: white;
+  font-weight: bold;
   transition: all 0.2s ease;
-  letter-spacing: 0.5px;
 }
 
 .go-create-btn:hover {
+  background: #4752c4;
   transform: translateY(-2px);
-  background: linear-gradient(135deg, #4f63d6, #7488e0);
   box-shadow: 0 6px 16px rgba(0,0,0,0.4);
 }
 
-.go-create-btn:active {
-  transform: translateY(0px);
-  box-shadow: none;
-}
-
+/* ===== CREATE ROOM PAGE ===== */
 .create-room-page {
-  background: #131528;
+  background: #1e2030;
   border-radius: 14px;
   border: 2px solid #2f3b82;
   padding: 2rem;
   width: 500px;
-  margin: 0 auto;
-  box-shadow: 0 0 20px rgba(0,0,0,0.4);
-  text-align: center;
+  box-shadow: 0 0 25px rgba(66,105,255,0.35);
 }
 
 .create-room-page h2 {
   font-size: 2rem;
-  margin-bottom: 1.5rem;
-  letter-spacing: 1px;
+  margin-bottom: 2rem;
+  color: #ffffff;
   text-transform: uppercase;
-  color: #dce2ff;
+  letter-spacing: 1px;
 }
 
 .form-block {
-  text-align: left;
-  margin-bottom: 1.4rem;
+  margin-bottom: 1.5rem;
 }
 
 .form-block label {
   display: block;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.4rem;
+  color: #cdd2ff;
   font-weight: bold;
-  color: #c9cfff;
-  font-size: 0.95rem;
 }
 
 .create-room-page input,
@@ -252,51 +172,46 @@ body {
   padding: 12px;
   border-radius: 8px;
   border: 1px solid #2f3b82;
-  background: #1a1d34;
-  color: #e6eaff;
+  background: #141627;
+  color: #dce2ff;
   font-size: 1rem;
-  transition: border-color 0.15s ease;
+  transition: 0.2s ease;
 }
 
 .create-room-page input:focus,
 .create-room-page select:focus {
   border-color: #7280ff;
+  box-shadow: 0 0 8px rgba(114,128,255,0.3);
   outline: none;
-  box-shadow: 0 0 6px rgba(114,128,255,0.3);
 }
 
 .buttons {
   display: flex;
-  justify-content: space-between;
   gap: 1rem;
-  margin-top: 2rem;
 }
 
 .buttons button {
   flex: 1;
   padding: 12px 0;
+  border-radius: 8px;
   border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 1.1rem;
   font-weight: bold;
-  transition: all 0.2s ease;
-  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: 0.2s ease;
 }
 
-/* BOTTONE CREATE */
+/* CREATE button */
 .buttons button:first-child {
-  background: linear-gradient(135deg, #2e7d32, #4caf50);
+  background: #2e7d32;
   color: white;
 }
 
 .buttons button:first-child:hover {
-  background: linear-gradient(135deg, #3fa843, #66bb6a);
+  background: #3fa843;
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.4);
 }
 
-/* BOTTONE CANCEL */
+/* CANCEL button */
 .buttons button:last-child {
   background: #555;
   color: white;
@@ -307,3 +222,63 @@ body {
   transform: translateY(-2px);
 }
 
+.back-btn {
+  padding: 10px 20px;
+  background: #5865f2;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.2s ease;
+  margin-top: 1.5rem;
+}
+
+.back-btn:hover {
+  background: #4752c4;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(66,105,255,0.35);
+}
+
+.back-btn {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.welcome-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+  padding-right: 0.5rem;
+  color: #cdd2ff;
+  font-size: 1.1rem;
+}
+
+.welcome-bar strong {
+  color: #ffffff;
+}
+
+.credits-container {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+/* Ridimensiona le card */
+.credit-card {
+  width: 300px;            /* <-- larghezza fissa piccola e bella */
+}
+
+/* Ridimensiona le immagini */
+.credit-card img {
+  width: 100%;             
+  height: auto;
+  max-height: 300px;       /* <-- limite massimo altezza */
+  object-fit: cover;       /* <-- ritaglia in modo elegante */
+  border-radius: 12px;
+  box-shadow: 0 0 12px rgba(66,105,255,0.3);
+  margin-bottom: 0.8rem;
+}

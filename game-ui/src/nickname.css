@@ -1,0 +1,110 @@
+/* --- MODAL OVERLAY --- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  backdrop-filter: blur(4px);
+  background-color: rgba(0, 0, 0, 0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.25s ease-out;
+  z-index: 999;
+}
+
+/* --- MODAL BOX --- */
+.modal-box {
+  background: #1e2030;
+  padding: 32px;
+  border-radius: 12px;
+  text-align: center;
+  width: 350px;
+
+  box-shadow: 0px 0px 25px rgba(66, 105, 255, 0.4);
+  animation: scaleIn 0.25s ease-out;
+}
+
+.modal-box h2 {
+  font-size: 1.8rem;
+  margin-bottom: 20px;
+  color: white;
+  letter-spacing: 1px;
+}
+
+/* --- INPUT --- */
+.modal-box input {
+  width: 70%;
+  padding: 10px 12px;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: none;
+  outline: none;
+
+  background: #2a2d3b;
+  color: #fff;
+  margin-right: 10px;
+  margin-bottom: 15px;
+  transition: 0.2s;
+}
+
+.modal-box input:focus {
+  box-shadow: 0 0 8px #6f89ff;
+}
+
+/* --- BUTTON --- */
+.modal-box button {
+  padding: 10px 16px;
+  font-size: 1rem;
+  background-color: #5865f2;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  color: white;
+  transition: 0.2s;
+}
+
+.modal-box button:hover {
+  background-color: #4752c4;
+  transform: translateY(-1px);
+}
+
+/* --- ANIMATIONS --- */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.modal-box .back-btn {
+  margin-top: 12px;
+  padding: 8px 16px;
+  background: #555;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s ease;
+  font-size: 0.95rem;
+}
+
+.modal-box .back-btn:hover {
+  background: #777;
+  transform: translateY(-2px);
+}

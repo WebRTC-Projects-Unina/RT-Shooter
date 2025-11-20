@@ -4,7 +4,7 @@ import { io } from "socket.io-client";
 // Connetti al dispatcher
 const socket = io("http://localhost:8080");
 
-function CreateRoomPage({ onCancel, onCreate }) {
+function CreateRoomPage({nickname, onCancel, onCreate }) {
   const [roomName, setRoomName] = useState("");
   const [password, setPassword] = useState("");
   const [level, setLevel] = useState("Level 1");
@@ -17,6 +17,7 @@ function CreateRoomPage({ onCancel, onCreate }) {
       name: roomName,
       password: password,
       level: level,
+      creator: nickname
     });
 
     // Torna alla lobby (non serve passare dati locali)

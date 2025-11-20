@@ -40,9 +40,11 @@ io.on("connection", socket => {
       id: Date.now(),
       name: data.name,
       password: data.password,
-      creator: socket.id,
+      creator: data.creator,
       level: data.level,
       hasPassword: data.password.trim() !== "",
+      players: [],        // lista dei giocatori nella stanza
+      maxPlayers: 2       // max giocatori
     };
 
     rooms.push(newRoom);

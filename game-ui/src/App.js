@@ -2,9 +2,12 @@ import { useState } from "react";
 import MainMenu from "./components/MainMenu";
 import RoomList from "./components/RoomList";
 import CreateRoomPage from "./components/CreateRoomPage";
+import NicknameModal from "./components/NicknameModal";
 
 function App() {
   const [screen, setScreen] = useState("main-menu");
+  const [nickname, setNickname] = useState(null);
+
 
   return (
     <div className="app">
@@ -12,26 +15,61 @@ function App() {
       {/* MAIN MENU */}
       {screen === "main-menu" && (
         <MainMenu
-          onPlay1v1={() => setScreen("lobby")}
-          onLevelSelect={() => setScreen("levels")}
-          onSettings={() => setScreen("settings")}
+          onPlay1v1={() => {
+          if (!nickname) setScreen("ask-nickname");
+          else setScreen("lobby");
+          }}
+              onSettings={() => setScreen("settings")}
+              onCredits={() => setScreen("credits")}
         />
       )}
+          {screen === "credits" && (
+      <div className="screen credits-screen">
+        <h2>Credits</h2>
+
+        <div className="credits-container">
+          <div className="credit-card">
+            <img src="/creator1.jpg" alt="Creator 1" />
+            <p>Francesco Gaetano Niutta</p>
+          </div>
+
+          <div className="credit-card">
+            <img src="/creator2.jpg" alt="Creator 2" />
+            <p>Francesco Prisco</p>
+          </div>
+        </div>
+
+        <button className="back-btn" onClick={() => setScreen("main-menu")}>
+          Back
+        </button>
+      </div>
+    )}
+
+      {/* NICKNAME MODAL */}
+     {screen === "ask-nickname" && (
+    <NicknameModal
+      onConfirm={(name) => {
+        if (name === null) {
+          // Utente ha premuto BACK
+          setScreen("main-menu");
+          return;
+        }
+
+        // Utente ha confermato il nickname
+        setNickname(name);
+        setScreen("lobby");
+      }}
+    />
+  )}
+
 
       {/* LOBBY */}
       {screen === "lobby" && (
         <RoomList
+          nickname={nickname}
           onBack={() => setScreen("main-menu")}
           onCreateRoom={() => setScreen("create-room")}
         />
-      )}
-
-      {/* LEVEL SELECT */}
-      {screen === "levels" && (
-        <div className="screen">
-          <h2>Level Selection (placeholder)</h2>
-          <button onClick={() => setScreen("main-menu")}>Back</button>
-        </div>
       )}
 
       {/* SETTINGS */}
@@ -45,11 +83,9 @@ function App() {
       {/* CREATE ROOM PAGE */}
       {screen === "create-room" && (
         <CreateRoomPage
+          nickname={nickname}
           onCancel={() => setScreen("lobby")}
-          onCreate={(roomData) => {
-            console.log("Room Created:", roomData);
-            setScreen("lobby"); 
-          }}
+          onCreate={() => setScreen("lobby")}
         />
       )}
 
