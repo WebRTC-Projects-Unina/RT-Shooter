@@ -12,6 +12,7 @@ const io = new Server(server, {
   }
 });
 
+const roomProcesses = new Map(); // roomID → child process
 // === MEMORIA LOBBY === //
 let rooms = [];
 
@@ -33,6 +34,57 @@ io.on("connection", socket => {
   socket.on("request_lobby_list", () => {
   socket.emit("lobby_list", rooms);
   });
+  // === PLAYER JOINED ROOM (aggiorna il numero di giocatori) ===
+  socket.on("player_joined", ({ roomID, nickname }) => {
+    const room = rooms.find(r => r.id === roomID);
+    if (!room) return;
+
+    // evitiamo duplicati
+    if (!room.players.includes(nickname)) {
+      room.players.push(nickname);
+    }
+
+    console.log(`Player ${nickname} joined room ${roomID}`);
+
+    // aggiorna la lobby per tutti
+    io.emit("lobby_list", rooms);
+  });
+
+// === JOIN ROOM (richiesta di entrare in una stanza) ===
+socket.on("join_room", ({ roomID, nickname, password }) => {
+  const room = rooms.find(r => r.id === roomID);
+  if (!room) return;
+
+  // 1️⃣ Se la stanza ha password → verifica
+  if (room.hasPassword) {
+    if (!password || password !== room.password) {
+      socket.emit("join_denied", "Incorrect password");
+      return;
+    }
+  }
+
+  // 2️⃣ Verifica capienza
+  if (room.players.length >= room.maxPlayers) {
+    socket.emit("join_denied", "Room is full");
+    return;
+  }
+
+  // 3️⃣ Aggiungi player alla room
+  if (!room.players.includes(nickname)) {
+    room.players.push(nickname);
+  }
+
+  console.log(`Player ${nickname} joined room ${roomID}`);
+
+  // 4️⃣ Mando al client i dati per connettersi al server della room
+  socket.emit("join_accepted", {
+    roomID,
+    port: room.port
+  });
+
+  // 5️⃣ Aggiorno la lobby a tutti
+  io.emit("lobby_list", rooms);
+});
 
   // CREAZIONE ROOM
   socket.on("create_room", (data) => {
@@ -44,8 +96,18 @@ io.on("connection", socket => {
       level: data.level,
       hasPassword: data.password.trim() !== "",
       players: [],        // lista dei giocatori nella stanza
-      maxPlayers: 2       // max giocatori
+      maxPlayers: 2,       // max giocatori
+      port: null          // da assegnare quando il gioco parte
     };
+    // --- assegna porta libera ---
+    const port = getFreePort();
+    newRoom.port = port;
+
+    // --- avvia room server ---
+    startRoomServer(port, newRoom.id);
+
+    // --- rimanda al client info stanza ---
+    socket.emit("room_created", { roomID: newRoom.id, port });
 
     rooms.push(newRoom);
 
@@ -61,3 +123,42 @@ io.on("connection", socket => {
 server.listen(8080, () => {
   console.log("Dispatcher running on http://localhost:8080");
 });
+
+function getFreePort(start = 9000) {
+  const usedPorts = rooms.map(r => r.port).filter(Boolean);
+  let port = start;
+
+  while (usedPorts.includes(port)) {
+    port++;
+  }
+  return port;
+}
+
+const { spawn } = require("child_process");
+
+function startRoomServer(port, roomID) {
+  const child = spawn("node", ["roomServer.js", port, roomID], {
+    stdio: "inherit"
+  });
+
+  console.log(`Room server for ${roomID} started on port ${port}`);
+
+  // Salva il processo
+  roomProcesses.set(roomID, child);
+
+  // Quando il processo muore
+  child.on("exit", () => {
+    console.log(`Room server for ${roomID} EXITED`);
+
+    // rimuovi la stanza dal dispatcher
+    rooms = rooms.filter(r => r.id !== roomID);
+    roomProcesses.delete(roomID);
+
+    // aggiorna la lobby a tutti i client
+    io.emit("lobby_list", rooms);
+  });
+
+  return child;
+}
+
+

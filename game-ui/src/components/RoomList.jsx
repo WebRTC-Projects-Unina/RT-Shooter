@@ -1,25 +1,74 @@
 import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
+import PasswordModal from "./PasswordModal";
+
 
 const socket = io("http://localhost:8080");
 
 function RoomList({nickname,onBack, onCreateRoom }) {
 
   const [rooms, setRooms] = useState([]);
+  const [askingPassword, setAskingPassword] = useState(null);
 
   useEffect(() => {
+    // Chiedo la lista delle lobby al server
     socket.emit("request_lobby_list"); 
-    // Quando arriva la lista dal server → aggiornala
+
+    // 1️⃣ Ricezione lista lobby → aggiornamento
     socket.on("lobby_list", (data) => {
       console.log("Lobby list received:", data);
       setRooms(data);
     });
 
-    // cleanup quando il componente si unmounta
+    // 2️⃣ JOIN ACCETTATO → connettersi al room server
+    socket.on("join_accepted", ({ roomID, port }) => {
+      console.log("Join accepted, connecting to room:", roomID, "on port:", port);
+
+      const gameSocket = io(`http://localhost:${port}`);
+
+      gameSocket.on("connect", () => {
+        console.log("Connected to room server on port", port);
+
+        // comunica al dispatcher che sei ufficialmente dentro la room
+        socket.emit("player_joined", {
+          roomID,
+          nickname: nickname   // <-- assicurati che arrivi dal parent
+        });
+
+        // se vuoi passare a GamePage adesso:
+        // onJoinSuccess(roomID, port);
+      });
+    });
+
+    // 3️⃣ JOIN NEGATO (password sbagliata o room piena)
+    socket.on("join_denied", (msg) => {
+      alert(msg);
+    });
+
+    // cleanup quando smonta
     return () => {
       socket.off("lobby_list");
+      socket.off("join_accepted");
+      socket.off("join_denied");
     };
-  }, []);
+}, []);
+
+
+  function handleJoin(room) {
+  if (room.hasPassword) {
+    // invece di prompt → apri la modale
+    setAskingPassword(room);
+    return;
+  }
+
+  // stanza senza password → join diretto
+  socket.emit("join_room", {
+    roomID: room.id,
+    nickname,
+    password: ""
+  });
+}
+
 
   return (
     <div className="lobby-layout">
@@ -65,7 +114,14 @@ function RoomList({nickname,onBack, onCreateRoom }) {
                 </span>
 
                 <span className="col-action">
-                  <button className="join-btn">Join</button>
+                 <button
+                  className="join-btn"
+                  onClick={() => handleJoin(room)}
+                  disabled={room.players.length >= room.maxPlayers}
+                >
+                  Join
+                </button>
+
                 </span>
               </div>
             ))}
@@ -75,7 +131,21 @@ function RoomList({nickname,onBack, onCreateRoom }) {
 
         <button className="back-btn" onClick={onBack}>Back</button>
       </div>
-
+    {askingPassword && (
+    <PasswordModal
+      room={askingPassword}
+      onCancel={() => setAskingPassword(null)}
+      onConfirm={(pwd) => {
+        socket.emit("join_room", {
+          roomID: askingPassword.id,
+          nickname,
+          password: pwd
+        });
+        setAskingPassword(null);
+      }}
+    />
+  )}
+          
     </div>
   );
 }
