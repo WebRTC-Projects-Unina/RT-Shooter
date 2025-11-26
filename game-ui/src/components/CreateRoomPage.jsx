@@ -1,73 +1,55 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { io } from "socket.io-client";
-import { useEffect } from "react";
-
 
 // Connetti al dispatcher
 const socket = io("http://localhost:8080");
 
-function CreateRoomPage({nickname, onCancel, onCreate }) {
+function CreateRoomPage({ nickname, onCancel, setScreen, setGameInfo }) {
   const [roomName, setRoomName] = useState("");
   const [password, setPassword] = useState("");
   const [level, setLevel] = useState("Level 1");
-  const [connectedToRoomServer, setConnectedToRoomServer] = useState(false);
-  const [roomServerPort, setRoomServerPort] = useState(null);
 
   function createRoom() {
     if (!roomName.trim()) return;
 
-    // INVIO AL SERVER
     socket.emit("create_room", {
       name: roomName,
       password: password,
       level: level,
       creator: nickname
     });
-
-    
   }
 
-    useEffect(() => {
+  useEffect(() => {
     socket.on("room_created", ({ roomID, port }) => {
       console.log("Room created!", roomID, "Redirecting to port:", port);
 
-      // Connessione al room server dedicato
       const gameSocket = io(`http://localhost:${port}`);
 
       gameSocket.on("connect", () => {
         console.log("Connected to room server on port:", port);
-        setConnectedToRoomServer(true);
-        setRoomServerPort(port);
-         socket.emit("player_joined", { // notifica al dispatcher
+
+        // Notifica al dispatcher
+        socket.emit("player_joined", {
           roomID,
           nickname
         });
 
-        // Torna alla lobby (non serve passare dati locali)
-      onCreate();
+        // SALVA INFO PER GAME.JSX
+        setGameInfo({ roomID, port });
+
+        // VAI ALLA SCHERMATA DI GIOCO
+        setScreen("game");
       });
     });
 
-    // cleanup quando il componente viene smontato
     return () => {
       socket.off("room_created");
     };
-   }, []);
+  }, []);
 
   return (
     <div className="create-room-page">
-      {connectedToRoomServer && (
-    <div style={{
-      padding: "10px",
-      background: "lightgreen",
-      marginBottom: "10px",
-      borderRadius: "8px",
-      fontWeight: "bold",
-    }}>
-      ✅ Connected to room server on port {roomServerPort}!
-    </div>
-  )}
-
       <h2>Create a New Room</h2>
 
       <div className="form-block">

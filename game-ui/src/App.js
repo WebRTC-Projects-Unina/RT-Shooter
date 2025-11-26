@@ -3,10 +3,12 @@ import MainMenu from "./components/MainMenu";
 import RoomList from "./components/RoomList";
 import CreateRoomPage from "./components/CreateRoomPage";
 import NicknameModal from "./components/NicknameModal";
+import Game from "./components/Game";
 
 function App() {
   const [screen, setScreen] = useState("main-menu");
   const [nickname, setNickname] = useState(null);
+  const [gameInfo, setGameInfo] = useState(null);
 
 
   return (
@@ -69,8 +71,11 @@ function App() {
           nickname={nickname}
           onBack={() => setScreen("main-menu")}
           onCreateRoom={() => setScreen("create-room")}
+          setScreen={setScreen}
+          setGameInfo={setGameInfo}
         />
       )}
+
 
       {/* SETTINGS */}
       {screen === "settings" && (
@@ -82,12 +87,24 @@ function App() {
 
       {/* CREATE ROOM PAGE */}
       {screen === "create-room" && (
-        <CreateRoomPage
-          nickname={nickname}
-          onCancel={() => setScreen("lobby")}
-          onCreate={() => setScreen("lobby")}
-        />
-      )}
+      <CreateRoomPage
+        nickname={nickname}
+        onCancel={() => setScreen("lobby")}
+        setScreen={setScreen}
+        setGameInfo={setGameInfo}
+      />
+    )}
+
+
+          {screen === "game" && (
+      <Game
+        roomID={gameInfo.roomID}
+        port={gameInfo.port}
+        nickname={nickname}
+        onExit={() => setScreen("main-menu")}
+      />
+    )}
+
 
     </div>
   );

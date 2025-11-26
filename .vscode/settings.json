@@ -1,0 +1,17 @@
+{
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/build": true,
+    "**/dist": true,
+    "**/.cache": true,
+    "**/.parcel-cache": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/build": true,
+    "**/dist": true,
+    "**/.cache": true,
+    "**/.parcel-cache": true
+  },
+  "git.ignoreLimitWarning": true
+}
