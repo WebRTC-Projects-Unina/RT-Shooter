@@ -1,4 +1,4 @@
-/* import { useEffect } from "react";
+import { useEffect } from "react";
 import { io } from "socket.io-client";
 
 function Game({ roomID, port, nickname, onExit }) {
@@ -29,7 +29,7 @@ function Game({ roomID, port, nickname, onExit }) {
     };
 
     const script = document.createElement("script");
-    script.src = "/game.js";
+    script.src = "/test.js";
     script.async = true;
     document.body.appendChild(script);
 
@@ -54,10 +54,11 @@ function Game({ roomID, port, nickname, onExit }) {
 }
 
 export default Game;
+ 
 
- */
 
 // SEMPLIFICAZIONE PER TESTING UI
+/*
 export default function Game({ roomID, port, nickname, onExit }) {
   return (
     <div style={{ width: "100vw", height: "100vh", background: "black" }}>
@@ -94,3 +95,5 @@ export default function Game({ roomID, port, nickname, onExit }) {
     </div>
   );
 }
+
+*/

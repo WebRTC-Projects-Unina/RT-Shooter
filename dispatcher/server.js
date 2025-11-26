@@ -55,7 +55,7 @@ socket.on("join_room", ({ roomID, nickname, password }) => {
   const room = rooms.find(r => r.id === roomID);
   if (!room) return;
 
-  // 1️⃣ Se la stanza ha password → verifica
+  // Se la stanza ha password → verifica
   if (room.hasPassword) {
     if (!password || password !== room.password) {
       socket.emit("join_denied", "Incorrect password");
@@ -63,26 +63,26 @@ socket.on("join_room", ({ roomID, nickname, password }) => {
     }
   }
 
-  // 2️⃣ Verifica capienza
+  // Verifica capienza
   if (room.players.length >= room.maxPlayers) {
     socket.emit("join_denied", "Room is full");
     return;
   }
 
-  // 3️⃣ Aggiungi player alla room
+  // Aggiungi player alla room
   if (!room.players.includes(nickname)) {
     room.players.push(nickname);
   }
 
   console.log(`Player ${nickname} joined room ${roomID}`);
 
-  // 4️⃣ Mando al client i dati per connettersi al server della room
+  // Mando al client i dati per connettersi al server della room
   socket.emit("join_accepted", {
     roomID,
     port: room.port
   });
 
-  // 5️⃣ Aggiorno la lobby a tutti
+  // Aggiorno la lobby a tutti
   io.emit("lobby_list", rooms);
 });
 
