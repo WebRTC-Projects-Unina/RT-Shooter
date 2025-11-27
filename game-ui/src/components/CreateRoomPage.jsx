@@ -8,6 +8,23 @@ function CreateRoomPage({ nickname, onCancel, setScreen, setGameInfo }) {
   const [roomName, setRoomName] = useState("");
   const [password, setPassword] = useState("");
   const [level, setLevel] = useState("Level 1");
+  const [levelImage, setLevelImage] = useState("");  // Nuovo stato per l'immagine del livello
+
+  function updateLevelImage(selectedLevel) {
+  switch (selectedLevel) {
+    case "Level 1":
+      setLevelImage("1.jpg");
+      break;
+    case "Level 2":
+      setLevelImage("2.jpg"); 
+      break;
+    case "Level 3":
+      setLevelImage("3.jpg");
+      break;
+    default:
+      setLevelImage(""); // Se non c'è selezione, nessuna immagine
+  }
+}
 
   function createRoom() {
     if (!roomName.trim()) return;
@@ -21,6 +38,9 @@ function CreateRoomPage({ nickname, onCancel, setScreen, setGameInfo }) {
   }
 
   useEffect(() => {
+    // Aggiorna l'immagine del livello all'inizializzazione
+    updateLevelImage(level);
+
     socket.on("room_created", ({ roomID, port }) => {
       console.log("Room created!", roomID, "Redirecting to port:", port);
 
@@ -72,12 +92,18 @@ function CreateRoomPage({ nickname, onCancel, setScreen, setGameInfo }) {
 
       <div className="form-block">
         <label>Level</label>
-        <select value={level} onChange={(e) => setLevel(e.target.value)}>
+        <select value={level} onChange={(e) => { setLevel(e.target.value); updateLevelImage(e.target.value); }}>
           <option>Level 1</option>
           <option>Level 2</option>
           <option>Level 3</option>
         </select>
       </div>
+            {levelImage && (
+        <div className="level-preview">
+          <h3>Preview of {level}</h3>
+          <img src={`/assets/${levelImage}`} alt={level} />
+        </div>
+      )}
 
       <div className="buttons">
         <button onClick={createRoom}>Create</button>
@@ -86,5 +112,7 @@ function CreateRoomPage({ nickname, onCancel, setScreen, setGameInfo }) {
     </div>
   );
 }
+
+
 
 export default CreateRoomPage;
