@@ -76,11 +76,14 @@ function RoomList({ nickname, onBack, onCreateRoom, setScreen, setGameInfo }) {
 
   return (
     <div className="lobby-layout">
+      <div className="lobby-logo-container">
+      <img src="/assets/logo.png" alt="RT Shooter Logo" className="lobby-logo" />
+      </div>
       <div className="welcome-bar">
         Welcome, <strong>{nickname}</strong>
       </div>
 
-      <h3>Room Options</h3>
+      
 
       <div className="create-room-panel">
         <button className="go-create-btn" onClick={onCreateRoom}>

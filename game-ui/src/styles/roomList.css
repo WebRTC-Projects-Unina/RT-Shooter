@@ -82,3 +82,27 @@
   cursor: not-allowed;
   opacity: 0.5;
 }
+
+/* ===== LOBBY LOGO ===== */
+.lobby-logo-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.lobby-logo {
+  width: 260px;        /* Grandezza ideale per la pagina */
+  max-width: 80%;
+  user-select: none;
+  pointer-events: none;
+  filter: drop-shadow(0 0 12px rgba(66,105,255,0.45));
+}
+
+.lobby-logo {
+  animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

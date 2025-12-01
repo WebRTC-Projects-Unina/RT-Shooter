@@ -31,12 +31,12 @@ function App() {
 
         <div className="credits-container">
           <div className="credit-card">
-            <img src="/creator1.jpg" alt="Creator 1" />
+            <img src="/assets/creator1.png" alt="Creator 1" />
             <p>Francesco Gaetano Niutta</p>
           </div>
 
           <div className="credit-card">
-            <img src="/creator2.jpg" alt="Creator 2" />
+            <img src="/assets/creator2.jpg" alt="Creator 2" />
             <p>Francesco Prisco</p>
           </div>
         </div>

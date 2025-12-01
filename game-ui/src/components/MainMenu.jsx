@@ -3,7 +3,12 @@ import "../styles/mainMenu.css";
 function MainMenu({ onPlay1v1, onCredits, onSettings }) {
   return (
     <div className="main-menu">
-      <h1>RT_SHOOTER</h1>
+      
+      <img 
+        src="/assets/logo.png" 
+        alt="RT Shooter Logo" 
+        className="main-logo"
+      />
 
       <div className="menu-buttons">
         <button onClick={onPlay1v1}>Play 1v1</button>

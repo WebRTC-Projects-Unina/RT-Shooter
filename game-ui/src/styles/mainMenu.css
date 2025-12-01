@@ -38,3 +38,18 @@
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(0,0,0,0.4);
 }
+
+
+.main-logo {
+  width: 520px; /* aumentato */
+  max-width: 95%;
+  margin-bottom: 2.5rem;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  pointer-events: none;
+  user-select: none;
+
+  filter: drop-shadow(0 0 14px rgba(66,105,255,0.45));
+}
+

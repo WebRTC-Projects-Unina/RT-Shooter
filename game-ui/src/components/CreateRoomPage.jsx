@@ -90,7 +90,7 @@ function CreateRoomPage({ nickname, onCancel, setScreen, setGameInfo }) {
   return (
     <div className="create-room-page">
       <h2>Create a New Room</h2>
-
+    
       <div className="form-block">
         <label>Room Name</label>
         <input
@@ -125,19 +125,32 @@ function CreateRoomPage({ nickname, onCancel, setScreen, setGameInfo }) {
       </div>
 
       <div className="form-block">
-        <label>Level</label>
-        <select value={level} onChange={(e) => { setLevel(e.target.value); updateLevelImage(e.target.value); }}>
+      <label>Level</label>
+
+      <div className="select-wrapper">
+        <select 
+          value={level} 
+          onChange={(e) => { 
+            setLevel(e.target.value); 
+            updateLevelImage(e.target.value); 
+          }}
+        >
           <option>Level 1</option>
           <option>Level 2</option>
           <option>Level 3</option>
         </select>
       </div>
+    </div>
+
             {levelImage && (
-        <div className="level-preview">
-          <h3>Preview of {level}</h3>
-          <img src={`/assets/${levelImage}`} alt={level} />
-        </div>
-      )}
+            <div className="form-block">
+              <label>Preview of {level}</label>
+
+              <div className="level-preview-box">
+                <img src={`/assets/${levelImage}`} alt={level} />
+              </div>
+            </div>
+          )}
 
       <div className="buttons">
         <button onClick={createRoom}>Create</button>
