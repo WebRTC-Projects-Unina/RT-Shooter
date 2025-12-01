@@ -6,7 +6,15 @@ function Game({ roomID, port, nickname, onExit }) {
   useEffect(() => {
     const canvas = document.getElementById("canvas");
 
-    // SOCKET con server figlio
+    // creo Module
+    window.Module = {
+      canvas: canvas,
+      locateFile: (file) => "/" + file,
+      socket: null,
+      RegisterSocketIOCallback: null
+    };
+
+    // creo la socket
     const gameSocket = io(`http://localhost:${port}`, {
       query: { roomID, nickname }
     });
@@ -14,30 +22,44 @@ function Game({ roomID, port, nickname, onExit }) {
     gameSocket.on("connect", () => {
       console.log("Connected to room server:", port);
 
-      // notifico al server figlio
       gameSocket.emit("join_game", { nickname });
 
-      // passo la socket al WASM
       window.Module.socket = gameSocket;
+
+      // 👇 SE il WASM l'ha già caricato → lo chiamiamo ORA
+      if (window.Module.RegisterSocketIOCallback) {
+        console.log("🔵 React chiama RegisterSocketIOCallback (socket pronta)");
+        window.Module.RegisterSocketIOCallback();
+      }
+
     });
 
-    // LOAD WASM
-    window.Module = {
-      canvas: canvas,
-      locateFile: (file) => "/" + file,
-      socket: null
-    };
-
+    // Carico il WASM
     const script = document.createElement("script");
     script.src = "/test.js";
     script.async = true;
+
+    script.onload = () => {
+      console.log("WASM caricato");
+
+      // 👇 Se la socket è già pronta → registra i listener
+      if (window.Module.socket && window.Module.RegisterSocketIOCallback) {
+        console.log("🟢 React chiama RegisterSocketIOCallback (wasm caricato)");
+        window.Module.RegisterSocketIOCallback();
+      }
+    };
+
     document.body.appendChild(script);
 
+    // 🔴 IMPORTANTISSIMO: CLEANUP
     return () => {
+      console.log("Cleanup Game.jsx");
       gameSocket.disconnect();
       document.body.removeChild(script);
     };
-  }, []);
+
+  }, []); // CHIUDE useEffect 🔥🔥🔥
+
 
   return (
     <div className="game-screen">
@@ -54,46 +76,3 @@ function Game({ roomID, port, nickname, onExit }) {
 }
 
 export default Game;
- 
-
-
-// SEMPLIFICAZIONE PER TESTING UI
-/*
-export default function Game({ roomID, port, nickname, onExit }) {
-  return (
-    <div style={{ width: "100vw", height: "100vh", background: "black" }}>
-      <h1 style={{ color: "white" }}>
-        ROOM {roomID} – PORT {port}
-      </h1>
-
-      <canvas
-        id="canvas"
-        width="800"
-        height="600"
-        style={{
-          border: "3px solid white",
-          display: "block",
-          margin: "20px auto"
-        }}
-      />
-
-      <button
-        onClick={onExit}
-        style={{
-          position: "absolute",
-          top: 20,
-          right: 20,
-          padding: "10px 20px",
-          background: "red",
-          color: "white",
-          border: "none",
-          borderRadius: "5px"
-        }}
-      >
-        EXIT
-      </button>
-    </div>
-  );
-}
-
-*/
