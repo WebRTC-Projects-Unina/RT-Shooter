@@ -1,0 +1,124 @@
+/* ===== CREATE ROOM PAGE ===== */
+.create-room-page {
+  background: #1e2030;
+  border-radius: 14px;
+  border: 2px solid #2f3b82;
+  padding: 2rem;
+  width: 500px;
+  box-shadow: 0 0 25px rgba(66,105,255,0.35);
+}
+
+.create-room-page h2 {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.form-block {
+  margin-bottom: 1.5rem;
+}
+
+.form-block label {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: #cdd2ff;
+  font-weight: bold;
+}
+
+.create-room-page input,
+.create-room-page select {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #2f3b82;
+  background: #141627;
+  color: #dce2ff;
+  font-size: 1rem;
+  transition: 0.2s ease;
+}
+
+.create-room-page input:focus,
+.create-room-page select:focus {
+  border-color: #7280ff;
+  box-shadow: 0 0 8px rgba(114,128,255,0.3);
+  outline: none;
+}
+
+.buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+.buttons button {
+  flex: 1;
+  padding: 12px 0;
+  border-radius: 8px;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+/* ==== ERROR MESSAGE (VERSIONE PULITA) ==== */
+.error-message {
+  margin-top: 6px;
+  font-size: 14px;
+  color: #ff5c5c;        /* rosso soft */
+  padding-left: 4px;
+  cursor: pointer;
+  user-select: none;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+/* Fade-in */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+
+/* ===== CREATE ROOM PANEL ===== */
+.go-create-btn {
+  width: 100%;
+  padding: 12px 0;
+  margin: 1.3rem 0;
+  background: #5865f2;
+  border-radius: 10px;
+  border: none;
+  font-size: 1.2rem;
+  color: white;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.go-create-btn:hover {
+  background: #4752c4;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+}
+
+
+
+/* CREATE button */
+.buttons button:first-child {
+  background: #2e7d32;
+  color: white;
+}
+
+.buttons button:first-child:hover {
+  background: #3fa843;
+  transform: translateY(-2px);
+}
+
+/* CANCEL button */
+.buttons button:last-child {
+  background: #555;
+  color: white;
+}
+
+.buttons button:last-child:hover {
+  background: #777;
+  transform: translateY(-2px);
+}

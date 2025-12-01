@@ -1,3 +1,5 @@
+import "../styles/mainMenu.css";
+
 function MainMenu({ onPlay1v1, onCredits, onSettings }) {
   return (
     <div className="main-menu">

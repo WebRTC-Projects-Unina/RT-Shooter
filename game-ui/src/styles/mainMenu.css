@@ -1,0 +1,40 @@
+/* ===== MAIN MENU ===== */
+.main-menu {
+  text-align: center;
+  background: #1e2030;
+  padding: 3rem;
+  border-radius: 14px;
+  border: 2px solid #2f3b82;
+  box-shadow: 0 0 25px rgba(66,105,255,0.35);
+}
+
+.main-menu h1 {
+  font-size: 2.6rem;
+  margin-bottom: 2.5rem;
+  color: white;
+  letter-spacing: 1px;
+}
+
+.menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.menu-buttons button {
+  padding: 14px 20px;
+  font-size: 1.25rem;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  background: #5865f2;
+  color: white;
+  font-weight: bold;
+  transition: 0.2s ease;
+}
+
+.menu-buttons button:hover:not(:disabled) {
+  background: #4752c4;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+}

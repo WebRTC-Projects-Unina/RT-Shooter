@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import PasswordModal from "./PasswordModal";
-
+import "../styles/roomList.css";
 
 const socket = io("http://localhost:8080");
 
 function RoomList({ nickname, onBack, onCreateRoom, setScreen, setGameInfo }) {
   const [rooms, setRooms] = useState([]);
   const [askingPassword, setAskingPassword] = useState(null);
+  const [wrongPassword, setWrongPassword] = useState(false); // stato per errore password
+
 
   useEffect(() => {
     // Chiedo lista delle lobby
@@ -42,8 +44,15 @@ function RoomList({ nickname, onBack, onCreateRoom, setScreen, setGameInfo }) {
 
     // JOIN NEGATO
     socket.on("join_denied", (msg) => {
-      alert(msg);
-    });
+    if (msg === "Incorrect password") {           // 🆕 controlla risposta
+    setWrongPassword(true);                 // attiva errore
+    setAskingPassword((prev) => ({ ...prev })); // ri-apre modal
+    return;
+  }
+
+    alert(msg); // Per altri tipi di errori NON legati alla password
+  });
+
 
     return () => {
       socket.off("lobby_list");
@@ -120,19 +129,24 @@ function RoomList({ nickname, onBack, onCreateRoom, setScreen, setGameInfo }) {
       </div>
 
       {askingPassword && (
-        <PasswordModal
-          room={askingPassword}
-          onCancel={() => setAskingPassword(null)}
-          onConfirm={(pwd) => {
-            socket.emit("join_room", {
-              roomID: askingPassword.id,
-              nickname,
-              password: pwd
-            });
-            setAskingPassword(null);
-          }}
-        />
-      )}
+      <PasswordModal
+        room={askingPassword}
+        incorrect={wrongPassword}                // 🆕 manda errore al modal
+        onCancel={() => {
+          setAskingPassword(null);
+          setWrongPassword(false);               // 🆕 reset errore
+        }}
+        onConfirm={(pwd) => {
+          setWrongPassword(false);               // 🆕 reset errore ogni tentativo
+          socket.emit("join_room", {
+            roomID: askingPassword.id,
+            nickname,
+            password: pwd
+          });
+        }}
+      />
+    )}
+
     </div>
   );
 }

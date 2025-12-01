@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
+import "../styles/createRoomPage.css";
 
 // Connetti al dispatcher
 const socket = io("http://localhost:8080");
@@ -9,6 +10,9 @@ function CreateRoomPage({ nickname, onCancel, setScreen, setGameInfo }) {
   const [password, setPassword] = useState("");
   const [level, setLevel] = useState("Level 1");
   const [levelImage, setLevelImage] = useState("");  // Nuovo stato per l'immagine del livello
+  const roomNameRef = useRef(null); // 🆕 riferimento per autofocus
+  const [error, setError] = useState("");
+
 
   function updateLevelImage(selectedLevel) {
   switch (selectedLevel) {
@@ -27,7 +31,13 @@ function CreateRoomPage({ nickname, onCancel, setScreen, setGameInfo }) {
 }
 
   function createRoom() {
-    if (!roomName.trim()) return;
+    if (!roomName.trim()) {
+      setError("Room name is required");
+      roomNameRef.current?.focus();
+      return;
+    }
+
+    setError("");
 
     socket.emit("create_room", {
       name: roomName,
@@ -37,9 +47,18 @@ function CreateRoomPage({ nickname, onCancel, setScreen, setGameInfo }) {
     });
   }
 
+  function handleKeyDown(e) {     // 🆕 ENTER per creare
+  if (e.key === "Enter") {
+    createRoom();
+  }
+}
+
+
   useEffect(() => {
     // Aggiorna l'immagine del livello all'inizializzazione
     updateLevelImage(level);
+
+    roomNameRef.current?.focus(); // autofocus sul campo nome stanza
 
     socket.on("room_created", ({ roomID, port }) => {
       console.log("Room created!", roomID, "Redirecting to port:", port);
@@ -75,10 +94,24 @@ function CreateRoomPage({ nickname, onCancel, setScreen, setGameInfo }) {
       <div className="form-block">
         <label>Room Name</label>
         <input
+          ref={roomNameRef}   
           type="text"
           value={roomName}
-          onChange={(e) => setRoomName(e.target.value)}
+          onChange={(e) => {
+            setRoomName(e.target.value);
+            setError("");
+          }}
+          onKeyDown={handleKeyDown}
         />
+        {error && (
+        <div 
+          className="error-message" 
+          onClick={() => setError("")}   // 🆕 clic per nascondere errore
+        >
+          {error}
+        </div>
+      )}
+
       </div>
 
       <div className="form-block">
@@ -87,6 +120,7 @@ function CreateRoomPage({ nickname, onCancel, setScreen, setGameInfo }) {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+           onKeyDown={handleKeyDown}
         />
       </div>
 
