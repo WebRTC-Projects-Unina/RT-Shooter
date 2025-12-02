@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { io } from "socket.io-client";
 import "../styles/createRoomPage.css";
+import socket from "../DispatcherSocket";
+
 
 // Connetti al dispatcher
-const socket = io("http://localhost:8080");
 
-function CreateRoomPage({ nickname, onCancel, setScreen, setGameInfo }) {
+
+function CreateRoomPage({ nickname, onCancel, setScreen, setGameInfo}) {
   const [roomName, setRoomName] = useState("");
   const [password, setPassword] = useState("");
   const [level, setLevel] = useState("Level 1");
@@ -63,11 +64,6 @@ function CreateRoomPage({ nickname, onCancel, setScreen, setGameInfo }) {
     socket.on("room_created", ({ roomID, port }) => {
       console.log("Room created!", roomID, "Redirecting to port:", port);
 
-      const gameSocket = io(`http://localhost:${port}`);
-
-      gameSocket.on("connect", () => {
-        console.log("Connected to room server on port:", port);
-
         // Notifica al dispatcher
         socket.emit("player_joined", {
           roomID,
@@ -79,7 +75,6 @@ function CreateRoomPage({ nickname, onCancel, setScreen, setGameInfo }) {
 
         // VAI ALLA SCHERMATA DI GIOCO
         setScreen("game");
-      });
     });
 
     return () => {

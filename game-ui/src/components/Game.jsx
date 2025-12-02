@@ -1,8 +1,13 @@
 import { useEffect } from "react";
 import { io } from "socket.io-client";
+import socket from "../index";
+
 
 function Game({ roomID, port, nickname, onExit }) {
-
+   // creo la socket
+    const gameSocket = io(`http://localhost:${port}`, {
+      query: { roomID, nickname }
+    });
   useEffect(() => {
     const canvas = document.getElementById("canvas");
 
@@ -14,13 +19,13 @@ function Game({ roomID, port, nickname, onExit }) {
       RegisterSocketIOCallback: null
     };
 
-    // creo la socket
-    const gameSocket = io(`http://localhost:${port}`, {
-      query: { roomID, nickname }
-    });
+       const script = document.createElement("script");
+ 
 
     gameSocket.on("connect", () => {
       console.log("Connected to room server:", port);
+        script.src = "/test.js";
+        script.async = true;
 
       gameSocket.emit("join_game", { nickname });
 
@@ -35,9 +40,8 @@ function Game({ roomID, port, nickname, onExit }) {
     });
 
     // Carico il WASM
-    const script = document.createElement("script");
-    script.src = "/test.js";
-    script.async = true;
+
+   
 
     script.onload = () => {
       console.log("WASM caricato");

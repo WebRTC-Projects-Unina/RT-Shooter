@@ -5,10 +5,13 @@ import CreateRoomPage from "./components/CreateRoomPage";
 import NicknameModal from "./components/NicknameModal";
 import Game from "./components/Game";
 
+
+
 function App() {
   const [screen, setScreen] = useState("main-menu");
   const [nickname, setNickname] = useState(null);
   const [gameInfo, setGameInfo] = useState(null);
+
 
 
   return (
@@ -67,6 +70,7 @@ function App() {
 
       {/* LOBBY */}
       {screen === "lobby" && (
+        
         <RoomList
           nickname={nickname}
           onBack={() => setScreen("main-menu")}

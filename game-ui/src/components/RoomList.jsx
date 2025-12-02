@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
-import { io } from "socket.io-client";
 import PasswordModal from "./PasswordModal";
 import "../styles/roomList.css";
+import socket from "../DispatcherSocket.js"
 
-const socket = io("http://localhost:8080");
 
-function RoomList({ nickname, onBack, onCreateRoom, setScreen, setGameInfo }) {
+function RoomList({ nickname, onBack, onCreateRoom, setScreen, setGameInfo}) {
   const [rooms, setRooms] = useState([]);
   const [askingPassword, setAskingPassword] = useState(null);
   const [wrongPassword, setWrongPassword] = useState(false); // stato per errore password
@@ -24,12 +23,7 @@ function RoomList({ nickname, onBack, onCreateRoom, setScreen, setGameInfo }) {
     // JOIN ACCETTATO
     socket.on("join_accepted", ({ roomID, port }) => {
       console.log("Join accepted, connecting to room:", roomID, "port:", port);
-
-      const gameSocket = io(`http://localhost:${port}`);
-
-      gameSocket.on("connect", () => {
-        console.log("Connected to room server on port", port);
-
+    
         // Notifica al dispatcher
         socket.emit("player_joined", {
           roomID,
@@ -39,7 +33,7 @@ function RoomList({ nickname, onBack, onCreateRoom, setScreen, setGameInfo }) {
         // PASSA ALLA SCHERMATA DI GIOCO
         setGameInfo({ roomID, port });
         setScreen("game");
-      });
+    
     });
 
     // JOIN NEGATO
