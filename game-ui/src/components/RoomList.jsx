@@ -7,8 +7,7 @@ import socket from "../DispatcherSocket.js"
 function RoomList({ nickname, onBack, onCreateRoom, setScreen, setGameInfo}) {
   const [rooms, setRooms] = useState([]);
   const [askingPassword, setAskingPassword] = useState(null);
-  const [wrongPassword, setWrongPassword] = useState(false); // stato per errore password
-
+  const [wrongPassword, setWrongPassword] = useState(false); 
 
   useEffect(() => {
     // Chiedo lista delle lobby
@@ -38,9 +37,9 @@ function RoomList({ nickname, onBack, onCreateRoom, setScreen, setGameInfo}) {
 
     // JOIN NEGATO
     socket.on("join_denied", (msg) => {
-    if (msg === "Incorrect password") {           // 🆕 controlla risposta
-    setWrongPassword(true);                 // attiva errore
-    setAskingPassword((prev) => ({ ...prev })); // ri-apre modal
+    if (msg === "Incorrect password") {           
+    setWrongPassword(true);                 
+    setAskingPassword((prev) => ({ ...prev }));
     return;
   }
 
@@ -128,13 +127,13 @@ function RoomList({ nickname, onBack, onCreateRoom, setScreen, setGameInfo}) {
       {askingPassword && (
       <PasswordModal
         room={askingPassword}
-        incorrect={wrongPassword}                // 🆕 manda errore al modal
+        incorrect={wrongPassword}               
         onCancel={() => {
           setAskingPassword(null);
-          setWrongPassword(false);               // 🆕 reset errore
+          setWrongPassword(false);               
         }}
         onConfirm={(pwd) => {
-          setWrongPassword(false);               // 🆕 reset errore ogni tentativo
+          setWrongPassword(false);               
           socket.emit("join_room", {
             roomID: askingPassword.id,
             nickname,

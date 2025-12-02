@@ -15,7 +15,7 @@ function NicknameModal({ onConfirm }) {
     }
   }
 
-  function handleKeyDown(e) {     // 🆕 gestione ENTER
+  function handleKeyDown(e) {   
     if (e.key === "Enter") {
       handleConfirm();
     }

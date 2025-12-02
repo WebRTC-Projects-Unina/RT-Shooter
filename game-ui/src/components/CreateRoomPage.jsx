@@ -10,8 +10,8 @@ function CreateRoomPage({ nickname, onCancel, setScreen, setGameInfo}) {
   const [roomName, setRoomName] = useState("");
   const [password, setPassword] = useState("");
   const [level, setLevel] = useState("Level 1");
-  const [levelImage, setLevelImage] = useState("");  // Nuovo stato per l'immagine del livello
-  const roomNameRef = useRef(null); // 🆕 riferimento per autofocus
+  const [levelImage, setLevelImage] = useState("");  
+  const roomNameRef = useRef(null); 
   const [error, setError] = useState("");
 
 
@@ -48,7 +48,7 @@ function CreateRoomPage({ nickname, onCancel, setScreen, setGameInfo}) {
     });
   }
 
-  function handleKeyDown(e) {     // 🆕 ENTER per creare
+  function handleKeyDown(e) {     
   if (e.key === "Enter") {
     createRoom();
   }
@@ -56,10 +56,9 @@ function CreateRoomPage({ nickname, onCancel, setScreen, setGameInfo}) {
 
 
   useEffect(() => {
-    // Aggiorna l'immagine del livello all'inizializzazione
     updateLevelImage(level);
 
-    roomNameRef.current?.focus(); // autofocus sul campo nome stanza
+    roomNameRef.current?.focus(); 
 
     socket.on("room_created", ({ roomID, port }) => {
       console.log("Room created!", roomID, "Redirecting to port:", port);
@@ -101,7 +100,7 @@ function CreateRoomPage({ nickname, onCancel, setScreen, setGameInfo}) {
         {error && (
         <div 
           className="error-message" 
-          onClick={() => setError("")}   // 🆕 clic per nascondere errore
+          onClick={() => setError("")}   
         >
           {error}
         </div>
