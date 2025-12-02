@@ -2,15 +2,20 @@
 .main-menu {
   text-align: center;
   background: #1e2030;
-  padding: 3rem;
+
+  padding: 2rem;              
   border-radius: 14px;
   border: 2px solid #2f3b82;
   box-shadow: 0 0 25px rgba(66,105,255,0.35);
+
+  /* ⇦ contenitore più compatto */
+  width: min(80vw, 420px);    
+  margin-inline: auto;
 }
 
 .main-menu h1 {
-  font-size: 2.6rem;
-  margin-bottom: 2.5rem;
+  font-size: 2.2rem;          
+  margin-bottom: 2rem;
   color: white;
   letter-spacing: 1px;
 }
@@ -22,8 +27,8 @@
 }
 
 .menu-buttons button {
-  padding: 14px 20px;
-  font-size: 1.25rem;
+  padding: 12px 20px;         
+  font-size: 1.15rem;        
   border: none;
   border-radius: 10px;
   cursor: pointer;
@@ -39,11 +44,13 @@
   box-shadow: 0 6px 16px rgba(0,0,0,0.4);
 }
 
-
 .main-logo {
-  width: 520px; /* aumentato */
-  max-width: 95%;
-  margin-bottom: 2.5rem;
+  width: 100%;
+
+  /* ⇦ ridotto da 480px */
+  max-width: 340px;           
+
+  margin-bottom: 2rem;
   display: block;
   margin-left: auto;
   margin-right: auto;
@@ -52,4 +59,3 @@
 
   filter: drop-shadow(0 0 14px rgba(66,105,255,0.45));
 }
-
