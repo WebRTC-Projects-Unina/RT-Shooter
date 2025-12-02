@@ -66,7 +66,7 @@ void OnMessageFromJS(const char* msg) {
 
 EM_JS(void, RegisterSocketIOCallback, (), {
     if (!Module.socket) {
-        console.log("❌ Socket non pronta!");
+        console.log("Socket non pronta!");
         return;
     }
 
@@ -80,8 +80,6 @@ EM_JS(void, RegisterSocketIOCallback, (), {
             [json]           
         );
     });
-
-    console.log("🔵 RegisterSocketIOCallback installato.");
 });
 
 

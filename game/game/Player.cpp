@@ -102,8 +102,8 @@ void ClientPlayer::updatePosition(float deltaTime)
     checkCollission(deltaTime);
     m_position += m_velocity * deltaTime;
 
-    if (m_position.y < 0.2) {
-        m_position.y = 0.2;
+    if (m_position.y < 0) {
+        m_position.y = 0;
         m_velocity.y = 0;
     }
 
@@ -129,7 +129,7 @@ void ClientPlayer::updatePosition(float deltaTime)
    
 
     //camera.Position = m_position;
-    camera.Position = glm::vec3(m_position.x, m_position.y, m_position.z);
+    camera.Position = glm::vec3(m_position.x, m_position.y+0.2, m_position.z);
     //std::cout << m_position.x << ", " << m_position.y << ", " << m_position.z << std::endl;
 }
 

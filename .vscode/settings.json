@@ -13,5 +13,6 @@
     "**/.cache": true,
     "**/.parcel-cache": true
   },
-  "git.ignoreLimitWarning": true
+  "git.ignoreLimitWarning": true,
+  "cmake.ignoreCMakeListsMissing": true
 }
