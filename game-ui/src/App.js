@@ -35,12 +35,32 @@ function App() {
         <div className="credits-container">
           <div className="credit-card">
             <img src="/assets/creator1.png" alt="Creator 1" />
-            <p>Francesco Gaetano Niutta</p>
+            <p>
+              Francesco Gaetano Niutta <br />
+              <a 
+                href="https://github.com/fniutta" 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                @fniutta
+              </a>
+            </p>
+
           </div>
 
           <div className="credit-card">
             <img src="/assets/creator2.jpg" alt="Creator 2" />
-            <p>Francesco Prisco</p>
+            <p>
+              Francesco Prisco <br />
+              <a 
+                href="https://github.com/Azzerot" 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                @Azzerot
+              </a>
+            </p>
+            
           </div>
         </div>
 

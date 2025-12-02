@@ -67,4 +67,19 @@ body {
   margin-bottom: 0.8rem;
 }
 
+/* ===== CREDIT LINKS ===== */
+.credit-card a {
+  color: #8fa3ff;               /* blu chiaro elegante */
+  font-weight: 600;
+  text-decoration: none;        /* niente underline */
+  transition: 0.2s ease;
+}
+
+.credit-card a:hover {
+  color: #b7c3ff;               /* blu più chiaro */
+  text-decoration: underline;   /* underline solo in hover */
+  text-shadow: 0 0 8px rgba(114,128,255,0.5);
+  cursor: pointer;
+}
+
 
