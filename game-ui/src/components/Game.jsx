@@ -6,7 +6,7 @@ import socket from "../index";
 
 function Game({ roomID, port, nickname, onExit }) {
    // creo la socket
-    const gameSocket = io(`http://localhost:${port}`, {
+    const gameSocket = io(`http://${window.location.hostname}:${port}`, {
       query: { roomID, nickname }
     });
   useEffect(() => {
