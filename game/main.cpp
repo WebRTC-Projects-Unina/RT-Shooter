@@ -11,9 +11,8 @@
 
 #include "main.h"
 #include "res/shaders/BlinnPhong.shader"
-#include "res/shaders/Phong.shader"
-#include "res/shaders/Flat.shader"
-#include "res/shaders/Gouraud.shader"
+#include "res/shaders/SkyBox.shader"
+
 
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
@@ -52,7 +51,7 @@ int main(void)
     window = glfwCreateWindow(winWidth, winHeight, "Window", NULL, NULL);
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
-     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
 
     // Dopo aver inizializzato GLFW e creato una finestra:
     ImGui::CreateContext();
@@ -71,37 +70,21 @@ int main(void)
     glEnable(GL_DEPTH_TEST);
     
   
-    //flatShader = CreateShader(FlatShaderVertex, FlatShaderFragment);
-
-    //gouraudShader = CreateShader(GouraudShaderVertex, GouraudShaderFragment);
-    
-    //phongShader = CreateShader(PhongShaderVertex, PhongShaderFragment);
-
 	blinnPhongShader = CreateShader(BlinnPhongShaderVertex, BlinnPhongShaderFragment);
-
+    skyBoxShader = CreateShader(SkyBoxShaderVertex, SkyBoxShaderFragment);
     shader = blinnPhongShader;
     glUseProgram(shader);
 
 
-
+ 
     mode = 1;
-    old_model = 0;
-    current_model = 0;;
-    /* 
-     * Quando chiudo la finestra viene alzato il flag "glfwWindowShouldClose"
-     * e lo devo controllare perchè devo poi effettivamente devo "terminare"
-     * la finestra con "glfwDestroyWindow(window)" ma in questo caso uso direttamente
-     * "glfwTerminate()" poichè chiude tutte le finestre aprte e arresta glfw
-     */
 
-        
 
      emscripten_set_main_loop(rendering_loop, 0, 1);
 
-    //glDeleteProgram(phongShader);
-    //glDeleteProgram(gouraudShader);
-    //glDeleteProgram(flatShader);
     glDeleteProgram(blinnPhongShader);
+    glDeleteProgram(skyBoxShader);
+
 
 
     ImGui_ImplOpenGL3_Shutdown();

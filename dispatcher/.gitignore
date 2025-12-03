@@ -1,31 +1,28 @@
-# Dependencies
 node_modules/
-
-# Build output
 build/
 dist/
 
-# Environment variables
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# Logs
 npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
 .log
 
-# OS generated files
 .DS_Store
 Thumbs.db
 
-# IDE and tooling
 .vscode/
 .idea/
 
-# Misc
 .eslintcache
 node_modules
+
+
+
+./game/tools/*
+!./game/tools/convertitoreObj.py

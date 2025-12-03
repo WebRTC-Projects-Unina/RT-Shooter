@@ -34,14 +34,12 @@
     inline std::vector<int> map;
     inline int map_height, map_width;
     inline GLFWwindow* window; 
-    inline unsigned int flatShader; 
-    inline unsigned int gouraudShader; 
-    inline unsigned int phongShader; 
     inline unsigned int blinnPhongShader;
+    inline unsigned int skyBoxShader;
+
     inline unsigned int shader; 
     inline int mode; 
-    inline int old_model; 
-    inline int current_model; 
+
     inline float* vertices; 
     inline float dim; 
     inline double oldFrame;
@@ -52,7 +50,7 @@
     inline glm::vec3 ambientColor(1.0f, 0.4118f, 0.0f);      // #FF6900
     inline glm::vec3 diffuseColor(1.0f, 0.4118f, 0.0f);      // #FF6900
     inline glm::vec3 specularColor(1.0f, 1.0f, 1.0f);        // #FFFFFF
-    inline glm::vec3 backgroundColor(0.0157f, 0.2157f, 0.9961f); // #0437FE
+    inline glm::vec3 backgroundColor(34.0f/255.0f, 34.0f/255.0f, 34.0f/255.0f); // rgba(34, 34, 34, 1)
  
     inline bool diffuseEnable = true, ambientEnable = true, specularEnable = true;
 
@@ -61,18 +59,12 @@
 
 
 
-    inline glm::vec3 cameraPos;
-
-
-
+    inline glm::vec3 enemyPosition = glm::vec3(3.0f, 1.0f, 3.0f);
 
 
 
     inline double oldTime = glfwGetTime();
     inline double titleUpdateCooldownTime = glfwGetTime();
-
-    enum ShaderName { FlatShader, GouraudShader, PhongShader, BlinnPhongShader, ShaderName_COUNT };
-    inline int shaderSelector = BlinnPhongShader;
 
     unsigned int CompileShader(unsigned int type, const std::string source);
     unsigned int CreateShader(const std::string& vertexShader, const std::string& fragmentShader);
@@ -83,6 +75,7 @@
     void load_map(const std::string& path);
     
     inline glm::vec2 translations[10000];
+    inline glm::vec2 playerTranslations[2];
     inline int translations_index = 0;
 
 #endif

@@ -14,11 +14,17 @@
 #include "Mesh.h"
 #include "Camera.h"
 
+#define GLM_ENABLE_EXPERIMENTAL
+
+#include "menu.h"
+
 #include "../game/Player.h"
 
-#define GLM_ENABLE_EXPERIMENTAL
+
+
 #define EMSCRIPTEN_USE_EMBEDDED_GLFW3
 
+#include "emjs_functions.h"
 
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
@@ -44,61 +50,10 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
 
 ClientPlayer player(glm::vec3(3.0f, 3.0f, 3.0f), glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, -1.0f));
-glm::vec3 enemyPosition = glm::vec3(3.0f, 1.0f, 3.0f);
+int b_lastPressed_KEY_APOSTROPHE = 0;
+int b_lastPressed_KEY_M = 0;
 
 // Questa funzione verrà chiamata direttamente da JS
-extern "C" {
-EMSCRIPTEN_KEEPALIVE
-void OnMessageFromJS(const char* msg) {
-    std::string json(msg);
-    std::cout << "JSON ricevuto: " << json << std::endl;
-
-    glm::vec3 v;
-
-    // Parsing (rozzo ma funziona per il demo)
-    sscanf(json.c_str(),
-           "{ \"x\": %f , \"y\": %f , \"z\": %f }",
-           &v.x, &v.y, &v.z);
-
-    enemyPosition = v;
-}
-}
-
-EM_JS(void, RegisterSocketIOCallback, (), {
-    if (!Module.socket) {
-        console.log("Socket non pronta!");
-        return;
-    }
-
-    Module.socket.on("enemy_update", (pos) => {
-        const json = JSON.stringify(pos);
-
-        Module.ccall(
-            "OnMessageFromJS", // nome funzione C++
-            null,              // ritorno void
-            ["string"],        // tipo argomento
-            [json]           
-        );
-    });
-});
-
-
-
-EM_JS(void, sendPosizione, (const char* json), {
-    // jsSocket deve essere la tua WebSocket aperta in JavaScript
-    Module.socket.emit("player_update", JSON.parse(UTF8ToString(json)));
-});
-
-
-void sendVec3(glm::vec3 v) {
-
-
-    std::stringstream ss;
-    ss << "{ \"x\": " << v.x << ", \"y\": " << v.y << ", \"z\": " << v.z << " }";
-    std::string json = ss.str();
-
-    sendPosizione(json.c_str());
-}
 
 
 
@@ -106,66 +61,21 @@ void sendVec3(glm::vec3 v) {
 float lastX = winWidth / 2.0f;
 float lastY = winHeight / 2.0f;
 bool firstMouse = true;
-// timing
-float deltaTime = 0.0f;	// time between current frame and last frame
+
+float frameDeltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
 
-void imgui_menu_rendering() {
-            //Inizia il frame ImGui
-        ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
-
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-        window_flags |= ImGuiWindowFlags_NoMove;
-        //ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-        //ImGui::SetNextWindowPos(center, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-        //ImDrawList* draw_list = ImGui::GetWindowDrawList();
-        //Disegna la GUI con ImGui
-        ImGui::Begin("Parameters menu");
-            
-        
-        float th = 0.2f;
-        const ImU32 col = ImColor(ImVec4(1.0f, 1.0f, 0.4f, 1.0f));
-        //draw_list->AddLine(ImVec2(center.x, center.y-25), ImVec2(center.x, center.y+5), col, th);                          
-        //draw_list->AddLine(ImVec2(center.x-5, center.y), ImVec2(center.x+5, center.y), col, th);
-        
-        
-        ImGui::SliderFloat("Ka", &Ka, 0.0f, 1.0f);
-            ImGui::SliderFloat("Kd", &Kd, 0.0f, 1.0f);
-            ImGui::SliderFloat("Ks", &Ks, 1.0f, 7.0f);
-            ImGui::SliderFloat("Shininess", &shininess, 1.0f, 128.0f);
-            ImGui::SliderFloat3("Light Pos", (float*)&lightPos, -20.0f, 20.0f);
-            glm::vec3 playerPos = player.getPosition();
-            ImGui::InputFloat3("Posizione", (float*)&playerPos);
-            ImGui::InputFloat3("Enemy Pos", (float*)&enemyPosition);
-
-        // ImGui::InputFloat("Gravità", (float*)&gravity, 0.1f, 1.0f, "%.3f");
-            
-
-            ImGui::Checkbox("Diffuse", &diffuseEnable);
-            ImGui::Checkbox("Ambient", &ambientEnable);
-            ImGui::Checkbox("Specular", &specularEnable);
-        
-            ImGui::ColorEdit3("Background Color", (float*)&backgroundColor);
-
-        
-        ImGui::End();
+float lastPosUpdateDeltaTime = 0.0f;
+float lastPosUpdate = 0.0f;
 
 
-        
-        //Rendering ImGui
-            ImGui::Render();  // Chiude il frame ImGui e prepara i dati di disegno
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-            
-}
 
-Mesh* scimmia = nullptr;
 
 unsigned int wall_diffTexture, wall_specTexture;
 unsigned int floor_diffTexture, floor_specTexture;
+unsigned int enemy_diffTexture, skyBox_Texture;
 
- glm::vec2 playerTranslations[2];
+
 unsigned int VBO, cubeVAO;
 unsigned int instanceVBO;
 
@@ -174,34 +84,39 @@ unsigned int fVBO, floorVAO;
 
 unsigned int playerVBO; 
 unsigned int pVBO, playerVAO;
+
+
+unsigned int skyBoxVBO; 
+unsigned int sVBO, skyBoxVAO;
         
 static int last_cursor_disabled = -1;
+
+
+
+
 void rendering_loop() {
     
-
-
-       
+   
         double nowFrame = glfwGetTime();
-        deltaTime = nowFrame - oldFrame;
+        frameDeltaTime = nowFrame - oldFrame;
         oldFrame = nowFrame;
         
+        winWidth =  canvas_get_width();
+        winHeight = canvas_get_height();
+
+        //mando pacchetti 64 tick/sec (Valve assumimi -> what you see is what you get)
+        lastPosUpdateDeltaTime = nowFrame - lastPosUpdate;
+        if(lastPosUpdateDeltaTime > 0.015625) {
+            emscripten_async_call([](void*) { sendVec3(player.getPosition()); }, nullptr, 0);
+            lastPosUpdate = nowFrame;
+        }
 
 
         // input
-        // -----
         processInput(window);
-
-
         mouse_callback(window);
-        player.updatePosition(deltaTime);
+        player.updatePosition(frameDeltaTime);
 
-
-        if (GLFW_PRESS == glfwGetKey(window, GLFW_KEY_F)){
-            emscripten_request_pointerlock("#canvas", true);
-            emscripten_request_fullscreen("#canvas", true);
-
-        }
-      
 
  
         /* 
@@ -209,7 +124,7 @@ void rendering_loop() {
          * così che se cambia la dimesione aggiorna anche la dimesioe
          * della viewport (e quindi del contenuto della finestra)
          */
-        glfwGetWindowSize(window, &winWidth, &winHeight),
+        //glfwGetWindowSize(window, &winWidth, &winHeight); //non funziona bene con emscripten 
         glViewport(0, 0, winWidth, winHeight);
         
 
@@ -219,140 +134,155 @@ void rendering_loop() {
 
         
         
-        
-/*
-        if (current_model != old_model) {
-            objl::Loader Loader;
-
-        bool loadout = Loader.LoadFile("./res/models/blender_monkey.obj");
-
-        std::cout << std::endl << std::endl << Loader.LoadedMeshes[0].MeshName << std::endl;
-            old_model = current_model;
-            vertices = models[current_model];
-            dim = dimArray[current_model];
-
-            glBindBuffer(GL_ARRAY_BUFFER, buffer);
-            glBufferData(GL_ARRAY_BUFFER, dim * sizeof(float), vertices, GL_STATIC_DRAW);
-
-        }
-*/      
-
         if(!b_setupDone){
-            RegisterSocketIOCallback();
-             if (glfwRawMouseMotionSupported())
-                glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+            
+            RegisterSocketIOCallback(); //impsota callback per ricezione socket
+
+            if (glfwRawMouseMotionSupported()) glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
             glfwSetScrollCallback(window, scroll_callback);
 
-
-            //scimmia = new Mesh("./res/models/cube.obj");
+            
             load_map("./res/maps/test.json");
 
 
+            //texture
             textureLoad(&wall_diffTexture, "./res/textures/stone_brick_wall/stone_brick_wall_diff.jpg");
             textureLoad(&wall_specTexture, "./res/textures/stone_brick_wall/stone_brick_wall_specular.jpg");
             textureLoad(&floor_diffTexture, "./res/textures/floor/floor_diff.jpg");
             textureLoad(&floor_specTexture, "./res/textures/floor/floor_specular.jpg");
-
-            //texture
-
-             //AAAAAAA
-        // first, configure the cube's VAO (and VBO)
- 
-        glGenBuffers(1, &instanceVBO);
-        glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * 10000, &translations[0], GL_STATIC_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0); 
-
-        glGenVertexArrays(1, &cubeVAO);
-        glGenBuffers(1, &VBO);
-
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(cube), cube, GL_STATIC_DRAW);
-
-        glBindVertexArray(cubeVAO);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-        glEnableVertexAttribArray(2);   
-
-      
-        glEnableVertexAttribArray(3);
-        glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-        glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);	
-        glVertexAttribDivisor(3, 1);  
+            textureLoad(&enemy_diffTexture, "./res/textures/enemy/enemy_diff.jpg");
+            textureLoad(&skyBox_Texture, "./res/textures/skybox/skybox.jpg");
 
 
 
 
-        glGenBuffers(1, &floorVBO);
-        glBindBuffer(GL_ARRAY_BUFFER, floorVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * 10000, &translations[0], GL_STATIC_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0); 
 
-        glGenVertexArrays(1, &floorVAO);
-        glGenBuffers(1, &fVBO);
+            // first, configure the cube's VAO (and VBO)
 
-        glBindBuffer(GL_ARRAY_BUFFER, fVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(floor_vertex), floor_vertex, GL_STATIC_DRAW);
+            glGenBuffers(1, &instanceVBO);
+            glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * 10000, &translations[0], GL_STATIC_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, 0); 
 
-        glBindVertexArray(floorVAO);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-        glEnableVertexAttribArray(2);   
+            glGenVertexArrays(1, &cubeVAO);
+            glGenBuffers(1, &VBO);
 
-      
-        glEnableVertexAttribArray(3);
-        glBindBuffer(GL_ARRAY_BUFFER, floorVBO);
-        glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);	
-        glVertexAttribDivisor(3, 1);  
+            glBindBuffer(GL_ARRAY_BUFFER, VBO);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(cube), cube, GL_STATIC_DRAW);
+
+            glBindVertexArray(cubeVAO);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+            glEnableVertexAttribArray(2);   
+
+
+            glEnableVertexAttribArray(3);
+            glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+            glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);	
+            glVertexAttribDivisor(3, 1);  
+
+
+
+
+            glGenBuffers(1, &floorVBO);
+            glBindBuffer(GL_ARRAY_BUFFER, floorVBO);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * 10000, &translations[0], GL_STATIC_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, 0); 
+
+            glGenVertexArrays(1, &floorVAO);
+            glGenBuffers(1, &fVBO);
+
+            glBindBuffer(GL_ARRAY_BUFFER, fVBO);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(floor_vertex), floor_vertex, GL_STATIC_DRAW);
+
+            glBindVertexArray(floorVAO);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+            glEnableVertexAttribArray(2);   
+
+
+            glEnableVertexAttribArray(3);
+            glBindBuffer(GL_ARRAY_BUFFER, floorVBO);
+            glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);	
+            glVertexAttribDivisor(3, 1);  
             playerTranslations[0] = glm::vec2(0.f, 0.f);
             playerTranslations[1] = glm::vec2(0.f, 0.f);
 
 
 
-        glGenBuffers(1, &playerVBO);
-        glBindBuffer(GL_ARRAY_BUFFER, playerVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * 2, &playerTranslations[0], GL_STREAM_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0); 
+            glGenBuffers(1, &playerVBO);
+            glBindBuffer(GL_ARRAY_BUFFER, playerVBO);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * 2, &playerTranslations[0], GL_STREAM_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, 0); 
 
-        glGenVertexArrays(1, &playerVAO);
-        glGenBuffers(1, &pVBO);
+            glGenVertexArrays(1, &playerVAO);
+            glGenBuffers(1, &pVBO);
 
-        glBindBuffer(GL_ARRAY_BUFFER, pVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(playerMesh), playerMesh, GL_STATIC_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, pVBO);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(playerMesh), playerMesh, GL_STATIC_DRAW);
 
-        glBindVertexArray(playerVAO);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-        glEnableVertexAttribArray(2);   
+            glBindVertexArray(playerVAO);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+            glEnableVertexAttribArray(2);   
 
-      
-        glEnableVertexAttribArray(3);
-        glBindBuffer(GL_ARRAY_BUFFER, playerVBO);
-        glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);	
-        glVertexAttribDivisor(3, 1); 
+
+            glEnableVertexAttribArray(3);
+            glBindBuffer(GL_ARRAY_BUFFER, playerVBO);
+            glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);	
+            glVertexAttribDivisor(3, 1); 
+
+
+
 
             
+            glGenBuffers(1, &skyBoxVBO);
+            glBindBuffer(GL_ARRAY_BUFFER, skyBoxVBO);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * 10000, &translations[0], GL_STATIC_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, 0); 
+
+            glGenVertexArrays(1, &skyBoxVAO);
+            glGenBuffers(1, &sVBO);
+
+            glBindBuffer(GL_ARRAY_BUFFER, sVBO);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(skyBokMesh), skyBokMesh, GL_STATIC_DRAW);
+
+            glBindVertexArray(skyBoxVAO);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+            glEnableVertexAttribArray(2);   
+
+
+            glEnableVertexAttribArray(3);
+            glBindBuffer(GL_ARRAY_BUFFER, skyBoxVBO);
+            glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);	
+            glVertexAttribDivisor(3, 1);  
+
+
+
+
             b_setupDone = true;
 
             
         }
 
-        //scimmia->Draw();
         //3d
-
-
 
        
         playerTranslations[0] = glm::vec2(0.f,0.f);
@@ -362,9 +292,6 @@ void rendering_loop() {
         glBindBuffer(GL_ARRAY_BUFFER, 0); 
 
        
-
-
-
 
         glm::mat4 model = glm::mat4(1.f);
         glm::mat4 view = glm::mat4(1.0f);
@@ -379,11 +306,7 @@ void rendering_loop() {
         unsigned int viewLoc = glGetUniformLocation(shader, "view");
 
         
-        // bind diffuse map
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, wall_diffTexture);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, wall_specTexture);
+   
 
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &view[0][0]);
@@ -394,7 +317,7 @@ void rendering_loop() {
         glUniform3fv(glGetUniformLocation(shader, "ambientColor"),  1, glm::value_ptr(ambientColor));
         glUniform3fv(glGetUniformLocation(shader, "diffuseColor"), 1, glm::value_ptr(diffuseColor));
         glUniform3fv(glGetUniformLocation(shader, "specularColor"), 1, glm::value_ptr(specularColor));
-        glUniform3f(glGetUniformLocation(shader, "viewPos"), cameraPos.x, cameraPos.y, cameraPos.z);
+        glUniform3fv(glGetUniformLocation(shader, "viewPos"), 1, glm::value_ptr(player.camera.Position));
 
         glUniform1f(glGetUniformLocation(shader, "ambientEnable"), 1.0f);
         glUniform1f(glGetUniformLocation(shader, "diffuseEnable"), 1.0f);
@@ -420,8 +343,7 @@ void rendering_loop() {
         else
             glUniform1f(glGetUniformLocation(shader, "specularEnable"), 1.0f);
       
-        shader = blinnPhongShader;
-        glUseProgram(shader);
+
 		
 
         //6 non indica il numero di vertici, ma il numero di indici
@@ -432,32 +354,63 @@ void rendering_loop() {
         * quel buffer
         */
 
+        //skybox render
+        /*
+        glDepthMask(GL_FALSE);
+        glUseProgram(blinnPhongShader);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, skyBox_Texture);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, wall_specTexture);
+        model = glm::translate(glm::mat4(1.0f), player.getPosition()); 
+        glBindVertexArray(cubeVAO);
+        glDrawArraysInstanced(GL_TRIANGLES, 0, 36, 1); 
+        glDepthMask(GL_TRUE);
+        */
+      
+        glUseProgram(blinnPhongShader);
+        
 
             // render the cube
+                 // bind diffuse map
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, wall_diffTexture);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, wall_specTexture);
+        
+
+       
+
         glBindVertexArray(cubeVAO);
         glDrawArraysInstanced(GL_TRIANGLES, 0, 36, translations_index); 
+
+    
 
          // bind diffuse map
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, floor_diffTexture);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, floor_specTexture);
-
         glBindVertexArray(floorVAO);
         glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 1); 
 
         
 
-        model = glm::translate(glm::mat4(1.0f), enemyPosition); 
+        model = glm::translate(glm::mat4(1.0f), glm::vec3(enemyPosition.x, enemyPosition.y - 0.5,enemyPosition.z)); 
 
-        
-
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, enemy_diffTexture);
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &model[0][0]);
+        model = glm::translate(glm::mat4(1.0f), glm::vec3(enemyPosition.x, enemyPosition.y - 0.5,enemyPosition.z)); 
+
         glBindVertexArray(playerVAO);
         glDrawArraysInstanced(GL_TRIANGLES, 0, (sizeof(playerMesh)/sizeof(float))/8, 1); 
 
+      
 
-        imgui_menu_rendering();
+        if(b_debug_menu_rendering) debug_menu_rendering(player.getPosition(), enemyPosition);
+        if(b_pause_menu_rendering) pause_menu_rendering();
+
 
 
         //glm::mat4 model2 = glm::translate(glm::mat4(1.0f), glm::vec3(-1.5f, 0.f, -5.0f));
@@ -477,8 +430,7 @@ void rendering_loop() {
         /* Poll for and process events */
        glfwPollEvents();
         
-    emscripten_async_call([](void*) { sendVec3(player.getPosition()); }, nullptr, 0);
-
+    
     
 }
 
@@ -519,21 +471,40 @@ void processInput(GLFWwindow *window)
         glfwSetWindowShouldClose(window, true);
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        player.processMovement(FORWARD, deltaTime);
+        player.processMovement(FORWARD, frameDeltaTime);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        player.processMovement(BACKWARD, deltaTime);
+        player.processMovement(BACKWARD, frameDeltaTime);
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        player.processMovement(LEFT, deltaTime);
+        player.processMovement(LEFT, frameDeltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        player.processMovement(RIGHT, deltaTime);
+        player.processMovement(RIGHT, frameDeltaTime);
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-        player.processMovement(JUMP, deltaTime);
+        player.processMovement(JUMP, frameDeltaTime);
+
+    
+    if(glfwGetKey(window, GLFW_KEY_APOSTROPHE) == GLFW_PRESS) b_lastPressed_KEY_APOSTROPHE = GLFW_PRESS;
+    if (b_lastPressed_KEY_APOSTROPHE == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_APOSTROPHE) != GLFW_PRESS)
+    {
+        b_lastPressed_KEY_APOSTROPHE = 0;
+        b_debug_menu_rendering = b_debug_menu_rendering ? false : true; 
+    }
+
+    if(glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) b_lastPressed_KEY_M = GLFW_PRESS;
+    if (b_lastPressed_KEY_M == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_M) != GLFW_PRESS)
+    {
+        b_lastPressed_KEY_M = 0;
+        b_pause_menu_rendering = b_pause_menu_rendering ? false : true; 
+    }
+
+
+    if ( glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS){
+        emscripten_request_pointerlock("#canvas", true);
+        emscripten_request_fullscreen("#canvas", true);
+    }
+      
 }
 
 
-
-// glfw: whenever the mouse moves, this callback is called
-// -------------------------------------------------------
 void mouse_callback(GLFWwindow* window)
 {   
 
@@ -549,7 +520,7 @@ void mouse_callback(GLFWwindow* window)
     }
 
     float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+    float yoffset = lastY - ypos; 
 
     lastX = xpos;
     lastY = ypos;
@@ -557,8 +528,7 @@ void mouse_callback(GLFWwindow* window)
     player.processMouseMovement(xoffset, yoffset);
 }
 
-// glfw: whenever the mouse scroll wheel scrolls, this callback is called
-// ----------------------------------------------------------------------
+
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
     player.camera.ProcessMouseScroll(static_cast<float>(yoffset));

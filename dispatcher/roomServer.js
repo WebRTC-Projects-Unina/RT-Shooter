@@ -38,7 +38,7 @@ io.on("connection", (socket) => {
   });
 
       socket.on("player_update", (data) => {
-      //console.log(`[ROOM ${roomID}] Update da ${socket.id}:`, data);
+      console.log(`[ROOM ${roomID}] Update da ${socket.id}:`, data);
       socket.broadcast.emit("enemy_update", data);
     });
 
