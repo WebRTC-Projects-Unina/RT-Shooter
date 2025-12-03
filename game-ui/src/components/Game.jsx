@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { io } from "socket.io-client";
 import socket from "../index";
-import "../styles/game.css";
+
 
 
 function Game({ roomID, port, nickname, onExit }) {
