@@ -9,12 +9,13 @@
 </p>
 
 
-RT-Shooter è un gioco FPS multiplayer 1v1 che può essere giocato direttamente nel browser. La game UI (Frontend) è sviluppata con **React** ed il dispatcher (backend) con **Node.js**. Inoltre, il gioco utilizza **WebRTC** per la comunicazione in tempo reale, Socket.IO per gestire la sincronizzazione tra i client (passando sempre per il server), e **WebAssembly** per un motore di gioco reattivo e performante.
+RT-Shooter è un gioco FPS multiplayer 1v1 che può essere giocato direttamente nel browser. La game UI (Frontend) è sviluppata con **React** ed il dispatcher (Backend) con **Node.js**. Inoltre, il gioco utilizza **WebRTC** per la comunicazione in tempo reale, Socket.IO per gestire la sincronizzazione tra i client (passando sempre per il server), e **WebAssembly** per un motore di gioco reattivo e performante.
 
 ---
 1. [**Caratteristiche Principali**](#caratteristiche-principali)
 2. [**Tecnologie Utilizzate**](#tech-stack)
 3. [**Setup del Progetto**](#setup-del-progetto)
+4. [**Game engine**](#game-engine)
 ---
 ## Caratteristiche principali
 
@@ -127,7 +128,8 @@ cd emsdk
 NOTA BENE: il flag **--permanent** fa si che **Emscripten** attivi la versione richiesta in modo permanente.
 
 Questo significa che l'ambiente di **Emscripten** verrà automaticamente caricato ogni volta che apri una nuova finestra del terminale. 
-Senza il flag dovrei ogni volta in volta eseguire eseguire manualmente source ./emsdk_env.sh.
+Senza il flag dovrei ogni volta in volta eseguire eseguire manualmente source ./emsdk_env.sh.  
+
 A voi la scelta !
 ```
 ./emsdk activate latest --permanent
@@ -140,7 +142,8 @@ emcc -v
 
 ## Comando per la compilazione con Emscripten
 
-Il comando è presente interamente in **RT-Shooter/game/README.md** 
+Il comando è presente interamente in **RT-Shooter/game/README.md**.  
+
 I nuovi file generati ( .data .wasm e .js) sovrascriveranno automaticamente i precedenti.
 Per comodità è stato scritto un Makefile.
 
