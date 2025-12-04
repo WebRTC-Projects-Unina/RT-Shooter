@@ -9,18 +9,20 @@
 </p>
 
 
-RT-Shooter è un gioco FPS multiplayer 1v1 che può essere giocato direttamente nel browser. La game UI (Frontend) è sviluppata con **React** ed il dispatcher (Backend) con **Node.js**. Inoltre, il gioco utilizza **WebRTC** per la comunicazione in tempo reale, Socket.IO per gestire la sincronizzazione tra i client (passando sempre per il server), e **WebAssembly** per un motore di gioco reattivo e performante.
+RT-Shooter è un gioco FPS multiplayer 1v1 che può essere giocato direttamente nel browser. La game UI (Frontend) è sviluppata con **React** ed il dispatcher (Backend) con **Node.js**. Inoltre, il gioco utilizza **WebRTC** per la comunicazione in tempo reale, Socket\.IO per gestire la sincronizzazione tra i client (passando sempre per il server), e **WebAssembly** per un motore di gioco reattivo e performante.
 
 ---
 1. [**Caratteristiche Principali**](#caratteristiche-principali)
 2. [**Tecnologie Utilizzate**](#tech-stack)
 3. [**Setup del Progetto**](#setup-del-progetto)
 4. [**Game engine**](#game-engine)
+5. [**Struttura del Progetto**](#struttura-del-progetto)
+6. [**Descrizione dei componenti principali**](#descrizione-dei-componenti-principali)
 ---
 ## Caratteristiche principali
 
 - Chiamata Vocale peer-to-peer per interazione tra i giocatori con **WebRTC**
-- Sincronizzazione dei movimenti, degli eventi tra i giocatori e della chat testuale via **Socket.IO**
+- Sincronizzazione dei movimenti, degli eventi tra i giocatori e della chat testuale via **Socket\.IO**
 - Motore di gioco sviluppato in **C++** e compilato in **WebAssembly** con **Emscripten**
 - Interfaccia moderna e responsive con **React**
 - creazione on–demand di stanze dedicate attraverso il dispatcher (**Node.js**)
@@ -47,13 +49,14 @@ RT-Shooter è un gioco FPS multiplayer 1v1 che può essere giocato direttamente 
 
 ---
 
-## Tech Stack
+# Tech Stack
 
-- **Frontend:** React + WebRTC
-- **Backend:** Node.js + Socket.IO
-- **Motore di gioco:** **C++** compilato in WebAssembly (**WASM**)
-- **Styling:** CSS
-
+- **React** : Una libreria JavaScript per costruire interfacce utente dinamiche e scalabili, utilizzata per gestire la navigazione e l’interazione dell’utente nelle applicazioni web. 
+- **WebRTC** : Tecnologia che consente la comunicazione in tempo reale peer-to-peer direttamente tra browser, utilizzata per la chiamata vocale nel gioco.
+- **Node.js** : Ambiente di esecuzione JavaScript lato server, utilizzato per gestire il dispatcher del gioco.
+- **Socket\.IO** : Libreria per la comunicazione in tempo reale bidirezionale tra client e server, utilizzata per la sincronizzazione degli eventi di gioco.
+- **WASM** : WebAssembly, utilizzato per eseguire codice **C++** compilato ad alte prestazioni nel browser.
+- **CSS** : linguaggio di stile utilizzato per definire l'aspetto visivo dell'interfaccia utente.
 
 ---
 
@@ -101,7 +104,7 @@ npm start
 
 # Game engine
 
-I file data.js e data.wasm, presenti nella cartella public del frontend, sono stati generati utilizzando **Emscripten** a partire da un codice sorgente scritto in **C++**, che si trova nella cartella game.
+I file test.js e test.wasm e test.data presenti nella cartella public del frontend, sono stati generati utilizzando **Emscripten** a partire da un codice sorgente scritto in **C++**, che si trova nella cartella game.
 
 Anche se per il corretto funzionamento del gioco sono necessari solo i file .data .js e .wasm nella cartella public dentro game-ui, è importante fare riferimento al codice sorgente **C++** per completezza. La cartella game contiene il motore di gioco, che è stato sviluppato in **C++** e successivamente compilato in WebAssembly (**WASM**) tramite **Emscripten** per essere eseguito direttamente nel browser.
 
@@ -118,19 +121,25 @@ Ecco 4 semplici step per installarlo:
 ```
 git clone https://github.com/Emscripten-core/emsdk.git
 ```
-### 2. **installa l'ultima versione**
+### 2. **Installa l'ultima versione**
 ```
 cd emsdk
 ./emsdk install latest
 ```
 
 ### 3. **Attiva il tutto**
-NOTA BENE: il flag **--permanent** fa si che **Emscripten** attivi la versione richiesta in modo permanente.
+> [!IMPORTANT]
+> Probabilmente è necessario riavviare il pc per far si che le variabili d'ambiente vengano settate correttamente. 
 
+
+
+> [!NOTE]
+> Il flag **--permanent** fa si che **Emscripten** attivi la versione richiesta in modo permanente.
 Questo significa che l'ambiente di **Emscripten** verrà automaticamente caricato ogni volta che apri una nuova finestra del terminale. 
 Senza il flag dovrei ogni volta in volta eseguire eseguire manualmente source ./emsdk_env.sh.  
+A voi la scelta !  
 
-A voi la scelta !
+
 ```
 ./emsdk activate latest --permanent
 ```
@@ -146,11 +155,131 @@ Il comando è presente interamente in **RT-Shooter/game/README.md**.
 
 I nuovi file generati ( .data .wasm e .js) sovrascriveranno automaticamente i precedenti.
 Per comodità è stato scritto un Makefile.
-
 Per compilare entrare, quindi, nella cartella game ed eseguire il comado make.
 Ecco la procedura:
 ```
 cd RT-Shooter/game
 make
 ```
+# Outline del Progetto
+La struttura del progetto RT-Shooter è organizzata in diverse cartelle principali, ciascuna con uno scopo specifico
+```
+/RT_SHOOTER
+  /dispatcher
+    roomServer.js
+    server.js
+  /game-ui
+    /public
+      /assets
+        (varie immagini e icone)
+      favicon.ico
+      index.html
+      test.data
+      test.js
+      test.wasm
+    /src
+      /components
+        CreateRoomPage.jsx
+        Game.jsx
+        MainMenu.jsx
+        NicknameModal.jsx
+        PasswordModal.jsx
+        RoomlistPage.jsx
+        Settings.jsx
+      /styles
+        createRoomPage.css
+        game.css
+        mainMenu.css
+        nickname.css
+        passwordModal.css
+        index.css
+        roomlist.css
+        settings.css
+      App.js
+      DispatcherSocket.js
+      index.js
+    (varie configurazioni di progetto)
+  /game
+    (file sorgente C++ del motore di gioco e Makefile per la compilazione con  
+    Emscripten)
+
+```
+
+# Descrizione dei componenti principali
+
+### `App.js`
+ 
+- **Funzione**: Gestisce la navigazione tra le schermate dell'applicazione.
+Ogni schermata ha un proprio componente **React** (**.jsx**) dedicato che viene importato e utilizzato in App.js per creare un flusso di navigazione coerente.
+- **Schermate**:
+  - **Main Menu**: Schermata principale del gioco con opzioni per iniziare una nuova partita, accedere alle impostazioni o visualizzare i crediti.
+    - **Nickname Input Page**: Schermata per inserire il nickname del giocatore prima di accedere al gioco.
+      - **Lobby**: Room list page Schermata che mostra l'elenco delle stanze di gioco disponibili e consente di unirsi a una stanza esistente.
+        - **Create Room Page**: Schermata per creare una nuova stanza di gioco.
+        - **Password Input Page**: Schermata per inserire la password di una stanza protetta prima di accedervi.
+          - **Game Screen**: Schermata principale di gioco dove avviene l'azione di gioco vera e propria.
+  - **Settings**: Schermata per configurare le impostazioni audio e video.
+  - **Credits**: Schermata che mostra le informazioni sugli sviluppatori del gioco.
+  
+### `MainMenu.jsx`
+
+**Funzione**: Questo componente rappresenta il menu principale dell'applicazione, dove l'utente può accedere a diverse opzioni, tra cui avviare una partita 1v1, modificare le impostazioni e visualizzare i crediti.
+
+**Stato**: Il componente non gestisce stato interno, ma si basa su funzioni passate come props (`onPlay1v1`, `onSettings`, `onCredits`) per gestire le azioni che l'utente compie.
+
+**Funzioni principali**:
+- **onPlay1v1**: Funzione passata come prop che viene chiamata quando l'utente seleziona l'opzione "Play 1v1". In genere, avvia una nuova partita 1v1.
+- **onSettings**: Funzione passata come prop che viene chiamata quando l'utente seleziona l'opzione "Settings". Consente di accedere alle impostazioni del gioco.
+- **onCredits**: Funzione passata come prop che viene chiamata quando l'utente seleziona l'opzione "Credits". Mostra i crediti del gioco.
+
+### `NicknameModal.jsx`
+
+**Funzione**: Questo componente mostra una finestra modale che consente all'utente di inserire un soprannome prima di entrare nel gioco. L'utente può confermare il soprannome o tornare indietro.
+
+**Stato**:
+- **nickname**: Memorizza il valore del soprannome inserito dall'utente.
+  
+**Funzioni principali**:
+- **useEffect()**: Gestisce il focus automatico sul campo di input quando il componente viene caricato.
+- **handleConfirm()**: Verifica che il soprannome non sia vuoto e, se valido, chiama la funzione `onConfirm` con il soprannome.
+
+### `RoomList.jsx`
+
+**Funzione**: Questo componente gestisce la lista delle stanze disponibili per il gioco. Consente agli utenti di unirsi a stanze esistenti o di creare nuove stanze. Se la stanza è protetta da password, l'utente verrà richiesto di inserire la password.
+
+**Stato**:
+- **rooms**: Lista delle stanze disponibili ricevuta dal server.
+- **askingPassword**: Determina se la finestra modale per l'inserimento della password è visibile.
+- **wrongPassword**: Indica se la password inserita dall'utente è errata.
+
+**Funzioni principali**:
+- **useEffect()**: All'inizializzazione del componente, richiede la lista delle stanze disponibili e ascolta gli eventi del server per aggiornare la lista o gestire la risposta di un tentativo di accesso alla stanza.
+- **handleJoin(room)**: Gestisce la logica per unirsi a una stanza. Se la stanza richiede una password, mostra la finestra di inserimento password, altrimenti tenta di entrare nella stanza.
+
+### `PasswordModal.jsx`
+
+**Funzione**: Questo componente mostra una finestra modale che richiede all'utente di inserire una password per accedere a una stanza di gioco protetta. Se la password è errata, viene mostrato un messaggio di errore.
+
+**Stato**:
+- **password**: Memorizza il valore inserito dall'utente nel campo di input per la password.
+- **error**: Contiene il messaggio di errore se la password inserita è errata.
+
+**Funzioni principali**:
+- **useEffect()**: Gestisce il focus automatico sul campo di input della password quando il componente viene caricato e resetta l'errore se la password è sbagliata.
+
+### `CreateRoomPage.jsx`
+
+**Funzione**: Questo componente consente all'utente di creare una nuova stanza di gioco. L'utente può scegliere un nome per la stanza, impostare una password opzionale e selezionare una delle 3 mappe disponibili. Una volta creata la stanza, l'utente viene indirizzato alla schermata di gioco.
+
+**Stato**:
+- **roomName**: Memorizza il nome della stanza inserito dall'utente.
+- **password**: Memorizza la password della stanza, se fornita.
+- **level**: Memorizza il livello (mappa) selezionato (Level 1, Level 2, Level 3).
+- **levelImage**: Memorizza l'immagine di anteprima del livello selezionato.
+- **error**: Memorizza eventuali messaggi di errore, come il nome della stanza mancante.
+
+**Funzioni principali**:
+- **updateLevelImage()**: Aggiorna l'immagine di anteprima in base al livello selezionato.
+- **createRoom()**: Crea una nuova stanza inviando le informazioni al server. Se il nome della stanza è vuoto, mostra un errore.
+- **useEffect()**: Gestisce l'effetto di aggiornamento dell'immagine di anteprima del livello e la configurazione della creazione della stanza. Ascolta l'evento "room_created" dal server per reindirizzare l'utente alla schermata di gioco.
 
