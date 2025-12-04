@@ -14,5 +14,12 @@
     "**/.parcel-cache": true
   },
   "git.ignoreLimitWarning": true,
-  "cmake.ignoreCMakeListsMissing": true
+  "cmake.ignoreCMakeListsMissing": true,
+  "files.associations": {
+    "sstream": "cpp",
+    "random": "cpp",
+    "iosfwd": "cpp",
+    "syncstream": "cpp",
+    "*.shader": "cpp"
+  }
 }

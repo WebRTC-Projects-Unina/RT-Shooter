@@ -8,26 +8,54 @@ const server = http.createServer();
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: "*",
     methods: ["GET", "POST"]
   }
 });
-
+ 
 let connectedPlayers = 0;
 
+process.stdin.on('data', (data) => {
+  const msg = JSON.parse(data.toString());
+  console.log('JSON dal padre:', msg);
+
+});
+
 io.on("connection", (socket) => {
+
   console.log(`[ROOM ${roomID}] Player connected:`, socket.id);
   connectedPlayers++;
+  io.emit("playerCount", connectedPlayers);
+  process.stdout.write(JSON.stringify({ roomID: roomID, playerCount:  connectedPlayers}) + "\n\r");
+
   console.log(`[ROOM ${roomID}] Connected players: ${connectedPlayers}`);
   
   socket.on("join_game", (player) => {
     console.log(`[ROOM ${roomID}] Player joined:`, player);
+    io.emit("playerCount", connectedPlayers);
+
   });
+
+  socket.onclose = (event) => {
+  console.log("WebSocket disconnessa.");
+  
+  // 1. Il codice numerico di stato (es. 1000, 1006)
+  console.log("Codice (Code):", event.code);
+  
+  // 2. Il motivo testuale (se il server lo ha inviato)
+  console.log("Motivo (Reason):", event.reason);
+  
+  // 3. Se la chiusura è stata "pulita" o frutto di un errore
+  console.log("Chiusura pulita (WasClean):", event.wasClean);
+  };
 
   socket.on("disconnect", () => {
   console.log(`[ROOM ${roomID}] Player disconnected:`, socket.id);
   
   connectedPlayers--;
+  io.emit("playerCount", connectedPlayers);
+  process.stdout.write(JSON.stringify({ roomID: roomID, playerCount:  connectedPlayers}) + "\n\r");
+
   console.log(`[ROOM ${roomID}] Connected players: ${connectedPlayers}`);
 
     // SE LA ROOM È VUOTA → CHIUDE IL PROCESSO
@@ -38,9 +66,29 @@ io.on("connection", (socket) => {
   });
 
       socket.on("player_update", (data) => {
-      console.log(`[ROOM ${roomID}] Update da ${socket.id}:`, data);
+      //console.log(`[ROOM ${roomID}] Update da ${socket.id}:`, data);
       socket.broadcast.emit("enemy_update", data);
     });
+
+    socket.on("offer", (message) => {
+        console.log(`aaaaaa`);
+        socket.broadcast.emit("offer", message);
+    });
+
+    socket.on("answer", (message) => {
+        console.log(`bb`);
+        socket.broadcast.emit("answer", message);
+    });
+    socket.on("candidate", (data) => {
+      try{
+        console.log(`cc`);
+        socket.broadcast.emit("candidate", data);
+        }
+        catch(err){
+          console.log(err);
+        }
+    });
+
 
 
 });

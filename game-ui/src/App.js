@@ -125,7 +125,7 @@ function App() {
         roomID={gameInfo.roomID}
         port={gameInfo.port}
         nickname={nickname}
-        onExit={() => setScreen("main-menu")}
+        setScreen={setScreen}
       />
     )}
 

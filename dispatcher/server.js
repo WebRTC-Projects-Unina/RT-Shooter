@@ -7,7 +7,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",   // la UI in sviluppo
+    origin: '*',   // la UI in sviluppo
     methods: ["GET", "POST"]
   }
 });
@@ -23,6 +23,9 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../game-ui/build", "index.html"));
 });
 
+
+
+
 // === SOCKET.IO LOGIC === //
 io.on("connection", socket => {
   console.log("New client:", socket.id);
@@ -34,21 +37,7 @@ io.on("connection", socket => {
   socket.on("request_lobby_list", () => {
   socket.emit("lobby_list", rooms);
   });
-  // === PLAYER JOINED ROOM (aggiorna il numero di giocatori) ===
-  socket.on("player_joined", ({ roomID, nickname }) => {
-    const room = rooms.find(r => r.id === roomID);
-    if (!room) return;
 
-    // evitiamo duplicati
-    if (!room.players.includes(nickname)) {
-      room.players.push(nickname);
-    }
-
-    console.log(`Player ${nickname} joined room ${roomID}`);
-
-    // aggiorna la lobby per tutti
-    io.emit("lobby_list", rooms);
-  });
 
 // === JOIN ROOM (richiesta di entrare in una stanza) ===
 socket.on("join_room", ({ roomID, nickname, password }) => {
@@ -64,17 +53,12 @@ socket.on("join_room", ({ roomID, nickname, password }) => {
   }
 
   // Verifica capienza
-  if (room.players.length >= room.maxPlayers) {
+  if (room.playerCount >= room.maxPlayers) {
     socket.emit("join_denied", "Room is full");
     return;
   }
 
-  // Aggiungi player alla room
-  if (!room.players.includes(nickname)) {
-    room.players.push(nickname);
-  }
 
-  console.log(`Player ${nickname} joined room ${roomID}`);
 
   // Mando al client i dati per connettersi al server della room
   socket.emit("join_accepted", {
@@ -95,10 +79,12 @@ socket.on("join_room", ({ roomID, nickname, password }) => {
       creator: data.creator,
       level: data.level,
       hasPassword: data.password.trim() !== "",
-      players: [],        // lista dei giocatori nella stanza
-      maxPlayers: 2,       // max giocatori
+      playerCount: 0,        
+      maxPlayers: 2,      
       port: null          // da assegnare quando il gioco parte
     };
+
+
     // --- assegna porta libera ---
     const port = getFreePort();
     newRoom.port = port;
@@ -135,11 +121,36 @@ function getFreePort(start = 9000) {
 }
 
 const { spawn } = require("child_process");
-
+let buffer = '';
 function startRoomServer(port, roomID) {
   const child = spawn("node", ["roomServer.js", port, roomID], {
-    stdio: "inherit"
+    stdio: ['pipe', 'pipe', 'pipe']
   });
+  
+  child.stdout.on('data', (data) => {
+    buffer += data.toString();
+    let obj;
+    let parts = buffer.split('\n');
+    buffer = parts.pop(); // tengo l'ultima riga incompleta
+
+    for (const line of parts) {
+        if (!line.trim()) continue; // salta righe vuote
+        try {
+            const obj = JSON.parse(line);
+            const room = rooms.find(r => r.id === Number(obj.roomID));
+            if (!room) return;
+            room.playerCount = obj.playerCount;
+
+            io.emit("lobby_list", rooms);
+            console.log(obj);
+        } catch (err) {
+            console.log(line);
+        }
+    }
+    
+   
+  });
+
 
   console.log(`Room server for ${roomID} started on port ${port}`);
 
@@ -147,8 +158,19 @@ function startRoomServer(port, roomID) {
   roomProcesses.set(roomID, child);
 
   // Quando il processo muore
-  child.on("exit", () => {
-    console.log(`Room server for ${roomID} EXITED`);
+  child.on("exit", (code, signal ) => {
+    console.log(`Room server for ${roomID} EXITED. Code: ${code}, Signal: ${signal}`);
+
+    // rimuovi la stanza dal dispatcher
+    rooms = rooms.filter(r => r.id !== roomID);
+    roomProcesses.delete(roomID);
+
+    // aggiorna la lobby a tutti i client
+    io.emit("lobby_list", rooms);
+  });
+
+  child.on("error", (err) => {
+    console.log(`CHILD ERROR: ${err}`);
 
     // rimuovi la stanza dal dispatcher
     rooms = rooms.filter(r => r.id !== roomID);

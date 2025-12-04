@@ -56,15 +56,15 @@ int main(void)
     // Dopo aver inizializzato GLFW e creato una finestra:
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
-    ImGui::StyleColorsDark();
 
+    io.Fonts->AddFontFromFileTTF("./res/fonts/Inter_28pt-Bold.ttf", 24.f);
+    ImGui::StyleColorsDark();
     // Inizializza i backend
-    ImGui_ImplGlfw_InitForOpenGL(window, true);  // 'window' è il tuo GLFWwindow*
-    ImGui_ImplOpenGL3_Init("#version 300 es");      // Adatta allo shader version che usi
+    ImGui_ImplGlfw_InitForOpenGL(window, true);  
+    //ImGui_ImplGlfw_InstallEmscriptenCallbacks(window, "#canvas");
+    ImGui_ImplOpenGL3_Init("#version 300 es");      
 
    
-    //stampo versione di OpenGL installata
-    std::cout << "Versione OpenGL: " << glGetString(GL_VERSION) << std::endl;
 
     //attiva test depth sui fragment
     glEnable(GL_DEPTH_TEST);
