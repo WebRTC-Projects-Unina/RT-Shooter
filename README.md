@@ -23,7 +23,7 @@ RT-Shooter è un gioco FPS multiplayer 1v1 che può essere giocato direttamente 
 
 - Chiamata Vocale peer-to-peer per interazione tra i giocatori con **WebRTC**
 - Sincronizzazione dei movimenti, degli eventi tra i giocatori e della chat testuale via **Socket\.IO**
-- Motore di gioco sviluppato in **C++** e compilato in **WebAssembly** con **Emscripten**
+- Motore di gioco sviluppato in **C++** con **OpenGL** e compilato in **WebAssembly** con **Emscripten**
 - Interfaccia moderna e responsive con **React**
 - creazione on–demand di stanze dedicate attraverso il dispatcher (**Node.js**)
 
@@ -282,4 +282,5 @@ Ogni schermata ha un proprio componente **React** (**.jsx**) dedicato che viene 
 - **updateLevelImage()**: Aggiorna l'immagine di anteprima in base al livello selezionato.
 - **createRoom()**: Crea una nuova stanza inviando le informazioni al server. Se il nome della stanza è vuoto, mostra un errore.
 - **useEffect()**: Gestisce l'effetto di aggiornamento dell'immagine di anteprima del livello e la configurazione della creazione della stanza. Ascolta l'evento "room_created" dal server per reindirizzare l'utente alla schermata di gioco.
+
 
