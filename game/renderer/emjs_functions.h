@@ -69,6 +69,16 @@ EM_JS(void, sendPosizione, (const char* json), {
     Module.socket.emit("player_update", JSON.parse(UTF8ToString(json)));
 });
 
+
+EM_JS(void, setPlayerDistance, (float distanza), {
+    //(vedere screen desmos)
+    let j = 0.5;
+    let p = 1.6;
+    if(distanza >= -j && distanza <= j) remoteAudio.volume = 1;
+    else remoteAudio.volume = 1 / Math.pow(distanza/j, p);
+    
+});
+
 EM_JS(void, exitGame, (), {
     if(!Module) return; 
     Module.exitGame();

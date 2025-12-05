@@ -400,7 +400,7 @@ glfwSetWindowSize(window, winWidth, winHeight);
         glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 1); 
 
         
-
+        setPlayerDistance(glm::distance(player.getPosition(), enemyPosition));
         model = glm::translate(glm::mat4(1.0f), glm::vec3(enemyPosition.x, enemyPosition.y - 0.5,enemyPosition.z)); 
 
         glActiveTexture(GL_TEXTURE0);
