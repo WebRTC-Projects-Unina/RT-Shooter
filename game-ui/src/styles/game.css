@@ -3,3 +3,8 @@
     height: 100%;
     margin: 0;
 }
+
+iframe
+{
+    display: none;
+}

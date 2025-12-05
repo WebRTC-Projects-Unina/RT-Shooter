@@ -20,6 +20,12 @@
     "random": "cpp",
     "iosfwd": "cpp",
     "syncstream": "cpp",
-    "*.shader": "cpp"
+    "*.shader": "cpp",
+    "format": "cpp",
+    "stacktrace": "cpp",
+    "thread": "cpp",
+    "vector": "cpp",
+    "cmath": "cpp",
+    "complex": "cpp"
   }
 }

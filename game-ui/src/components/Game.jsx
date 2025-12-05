@@ -3,6 +3,8 @@ import { io } from "socket.io-client";
 import socket from "../index";
 
 var setupDone = false;
+
+ 
 // creo la socket
 var gameSocket = null;
 var callStarted = false;
@@ -92,6 +94,9 @@ async function startAudioCall(){
 
 
 function Game({ roomID, port, nickname, setScreen }) {
+
+
+
 
 let script = document.createElement("script");
 
@@ -186,8 +191,11 @@ let script = document.createElement("script");
         // Scambio candidati ICE (percorsi di rete)
 
 
-        if (candidate) {
+        if (candidate && candidate.candidate) {
+          try{
             await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+          }
+          catch{}
         }
       });
 
@@ -252,7 +260,6 @@ let script = document.createElement("script");
       <canvas
         id="canvas"
       />
-      <audio id="remoteAudio" autoPlay></audio>
     </div>
   );
 }
