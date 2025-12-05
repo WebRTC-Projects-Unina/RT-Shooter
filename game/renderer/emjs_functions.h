@@ -25,8 +25,6 @@ extern "C" {
 EMSCRIPTEN_KEEPALIVE
 void OnMessageFromJS(const char* msg) {
     std::string json(msg);
-    std::cout << "JSON ricevuto: " << json << std::endl;
-
     glm::vec3 v;
 
     // Parsing (rozzo ma funziona per il demo)
@@ -38,6 +36,13 @@ void OnMessageFromJS(const char* msg) {
 }
 }
 
+
+extern "C" {
+EMSCRIPTEN_KEEPALIVE
+void exitJSCallback() {
+    emscripten_force_exit(0);
+}
+}
 EM_JS(void, RegisterSocketIOCallback, (), {
     if (!Module.socket) {
         console.log("Socket non pronta!");
@@ -60,9 +65,14 @@ EM_JS(void, RegisterSocketIOCallback, (), {
 
 EM_JS(void, sendPosizione, (const char* json), {
     // jsSocket deve essere la tua WebSocket aperta in JavaScript
+    if(!Module.socket) return;
     Module.socket.emit("player_update", JSON.parse(UTF8ToString(json)));
 });
 
+EM_JS(void, exitGame, (), {
+    if(!Module) return; 
+    Module.exitGame();
+});
 
 void sendVec3(glm::vec3 v) {
 
@@ -77,14 +87,14 @@ void sendVec3(glm::vec3 v) {
 EM_JS(int, canvas_get_width, (), {
   
   const canvasElement = document.querySelector('#canvas');
+  if(!canvasElement) return 1280;
   canvasElement.width = window.innerWidth;
   return canvasElement.width;
-
-
 });
 
 EM_JS(int, canvas_get_height, (), {
-    const canvasElement = document.querySelector('#canvas');    
+    const canvasElement = document.querySelector('#canvas');  
+     if(!canvasElement) return 720;
     canvasElement.height =  window.innerHeight;
     return canvasElement.height;
 });

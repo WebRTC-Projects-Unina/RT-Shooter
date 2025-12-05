@@ -101,8 +101,12 @@ void rendering_loop() {
         frameDeltaTime = nowFrame - oldFrame;
         oldFrame = nowFrame;
         
+    
         winWidth =  canvas_get_width();
+   
         winHeight = canvas_get_height();
+   
+glfwSetWindowSize(window, winWidth, winHeight);
 
         //mando pacchetti 64 tick/sec (Valve assumimi -> what you see is what you get)
         lastPosUpdateDeltaTime = nowFrame - lastPosUpdate;
@@ -114,7 +118,7 @@ void rendering_loop() {
 
         // input
         processInput(window);
-        mouse_callback(window);
+        if(b_pause_menu_rendering == false) mouse_callback(window);
         player.updatePosition(frameDeltaTime);
 
 
@@ -276,6 +280,7 @@ void rendering_loop() {
 
 
 
+            imgui_style_setup();
 
             b_setupDone = true;
 
@@ -409,7 +414,8 @@ void rendering_loop() {
       
 
         if(b_debug_menu_rendering) debug_menu_rendering(player.getPosition(), enemyPosition);
-        if(b_pause_menu_rendering) pause_menu_rendering();
+        if(b_pause_menu_rendering) {pause_menu_rendering(); b_debug_menu_rendering = false;}
+
 
 
 
@@ -419,14 +425,7 @@ void rendering_loop() {
         //glDrawArrays(GL_TRIANGLES, 0, dim / 6);
 
         /* Swap front and back buffers */
-     glfwSwapBuffers(window);
-   int cursor_disabled = glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED;
-
-    if (cursor_disabled != last_cursor_disabled) { // Only log changes as to not spam console
-        last_cursor_disabled = cursor_disabled;
-
-        std::cout << std::endl << "GLFW_CURSOR_DISABLED?" << cursor_disabled << std::endl;
-    }
+        glfwSwapBuffers(window);
         /* Poll for and process events */
        glfwPollEvents();
         
@@ -467,19 +466,19 @@ void textureLoad(unsigned int* texture, const char* path)
 
 void processInput(GLFWwindow *window)
 {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        player.processMovement(FORWARD, frameDeltaTime);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        player.processMovement(BACKWARD, frameDeltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        player.processMovement(LEFT, frameDeltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        player.processMovement(RIGHT, frameDeltaTime);
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-        player.processMovement(JUMP, frameDeltaTime);
+    
+    if(b_pause_menu_rendering == false){
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+            player.processMovement(FORWARD, frameDeltaTime);
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+            player.processMovement(BACKWARD, frameDeltaTime);
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+            player.processMovement(LEFT, frameDeltaTime);
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+            player.processMovement(RIGHT, frameDeltaTime);
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+            player.processMovement(JUMP, frameDeltaTime);
+    }
 
     
     if(glfwGetKey(window, GLFW_KEY_APOSTROPHE) == GLFW_PRESS) b_lastPressed_KEY_APOSTROPHE = GLFW_PRESS;
@@ -494,6 +493,12 @@ void processInput(GLFWwindow *window)
     {
         b_lastPressed_KEY_M = 0;
         b_pause_menu_rendering = b_pause_menu_rendering ? false : true; 
+        b_pause_menu_rendering ? emscripten_exit_pointerlock() :  emscripten_request_pointerlock("#canvas", true);
+        
+        //così quando si esce dal menu la camera punta nella stessa direzioen di quando si è aperto ik menu
+        lastX = winWidth / 2.0f;
+        lastY = winHeight / 2.0f;
+
     }
 
 

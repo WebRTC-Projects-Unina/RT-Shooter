@@ -104,14 +104,14 @@ function RoomList({ nickname, onBack, onCreateRoom, setScreen, setGameInfo}) {
                 <span className="col-status">
                   {room.hasPassword ? "🔒 Private" : "🔓 Open"}
                   {" · "}
-                  {(room.players?.length || 0)}/{room.maxPlayers}
+                  {(room.playerCount)}/{room.maxPlayers}
                 </span>
 
                 <span className="col-action">
                   <button
                     className="join-btn"
                     onClick={() => handleJoin(room)}
-                    disabled={room.players.length >= room.maxPlayers}
+                    disabled={room.playerCount >= room.maxPlayers}
                   >
                     Join
                   </button>
