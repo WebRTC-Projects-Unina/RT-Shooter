@@ -16,8 +16,9 @@ RT-Shooter è un gioco FPS multiplayer 1v1 che può essere giocato direttamente 
 2. [**Tecnologie Utilizzate**](#tech-stack)
 3. [**Setup del Progetto**](#setup-del-progetto)
 4. [**Game engine**](#game-engine)
-5. [**Struttura del Progetto**](#struttura-del-progetto)
+5. [**Outline del Progetto**](#outline-del-progetto)
 6. [**Descrizione dei componenti principali**](#descrizione-dei-componenti-principali)
+7. [**Sequence Diagram**](#sequence-diagram)
 ---
 ## Caratteristiche principali
 
@@ -282,5 +283,115 @@ Ogni schermata ha un proprio componente **React** (**.jsx**) dedicato che viene 
 - **updateLevelImage()**: Aggiorna l'immagine di anteprima in base al livello selezionato.
 - **createRoom()**: Crea una nuova stanza inviando le informazioni al server. Se il nome della stanza è vuoto, mostra un errore.
 - **useEffect()**: Gestisce l'effetto di aggiornamento dell'immagine di anteprima del livello e la configurazione della creazione della stanza. Ascolta l'evento "room_created" dal server per reindirizzare l'utente alla schermata di gioco.
+
+## `server.js`  (Dispatcher) 
+
+**Funzione**  
+Il Dispatcher è il server centrale dell’applicazione. Gestisce la lobby, mantiene la lista delle stanze disponibili e si occupa di creare nuovi “room server” come processi figli, assegnando loro una porta dedicata. Fornisce inoltre la UI React in produzione e gestisce tutta la comunicazione iniziale tramite Socket\.IO.
+
+**Stato**
+- **rooms**: Array che contiene tutte le stanze attive (ID, nome, creator, livello, porta assegnata, stato, playerCount).
+- **roomProcesses**: Mappa che associa ogni roomID al processo figlio corrispondente, utile per monitorare e terminare automaticamente le stanze.
+- **buffer**: Buffer temporaneo per raccogliere output JSON proveniente dai processi figli prima del parsing.
+
+**Funzioni principali**
+
+- **Gestione lobby (Socket\.IO)**  
+  - `lobby_list`: Invia ai client la lista aggiornata delle stanze.  
+  - `request_lobby_list`: Risponde a una richiesta esplicita inviando nuovamente la lista.
+
+- **join_room({ roomID, nickname, password })**  
+  Gestisce la richiesta di ingresso in una stanza:
+  - verifica se la stanza esiste;  
+  - se la stanza è protetta, valida la password;  
+  - controlla il numero di giocatori;  
+  - in caso positivo, invia al client le informazioni per connettersi al room server (roomID e porta).
+
+- **create_room(data)**  
+  Crea una nuova stanza:  
+  - genera ID univoco;  
+  - assegna una porta libera con `getFreePort()`;  
+  - avvia il processo figlio tramite `startRoomServer()`;  
+  - salva la stanza nella lista;  
+  - notifica il creatore con l'evento `room_created`.
+
+- **getFreePort(start = 9000)**  
+  Trova una porta libera scandendo le porte disponibili a partire da 9000, evitando quelle già assegnate alle altre stanze.
+
+- **startRoomServer(port, roomID)**  
+  Avvia un room server come processo figlio:
+  - esegue `roomServer.js` con porta e ID stanza;  
+  - ascolta l’output del processo per aggiornare il numero di giocatori nella stanza;  
+  - se il processo si chiude o genera errore, rimuove automaticamente la stanza dalla lobby;  
+  - aggiorna tutti i client inviando `lobby_list`.
+
+- **Static File Serving**  
+  In modalità produzione serve la UI React compilata tramite:
+  - `express.static("../game-ui/build")`  
+  - fallback `index.html` per supportare SPA routing.
+
+
+### `RoomServer.js`
+
+**Funzione**  
+Il Room Server è il processo figlio generato dal Dispatcher. Gestisce la comunicazione in tempo reale tra i due giocatori all’interno della stanza. Tiene traccia dei giocatori connessi, trasmette gli eventi WebRTC (offer/answer/candidate) e inoltra gli aggiornamenti di gioco (posizioni, movimenti, ecc.).  
+
+Ogni room server funziona in modo completamente indipendente e termina automaticamente quando tutti i giocatori si disconnettono.
+
+
+**Stato**
+- **connectedPlayers**: Numero di giocatori attualmente connessi alla stanza.  
+- **port**: Porta su cui il room server è in ascolto (passata come argomento dal Dispatcher).  
+- **roomID**: Identificativo univoco della stanza (passato come argomento dal Dispatcher).
+
+
+**Funzioni principali**
+
+- **Gestione connessione Socket\.IO**
+  - Quando un giocatore si connette:
+    - incrementa `connectedPlayers`;
+    - notifica il Dispatcher inviando JSON su `stdout`;
+    - notifica tutti i client con l’evento `playerCount`.
+  
+  - Quando un giocatore si disconnette:
+    - decrementa `connectedPlayers`;
+    - aggiorna il Dispatcher tramite `stdout`;
+    - se la stanza diventa vuota (`connectedPlayers === 0`), il server termina automaticamente con `process.exit(0)`.
+
+- **join_game**
+  Evento ricevuto quando un giocatore entra ufficialmente nella partita.  
+  Il server ritrasmette ai client il numero aggiornato di giocatori.
+
+
+- **player_update**
+  Riceve un aggiornamento di stato del giocatore (movimento, posizione, input di gioco) e lo ritrasmette all’altro giocatore tramite `enemy_update`.
+
+- **WebRTC Signaling**
+  Il room server gestisce il signaling necessario per stabilire la connessione P2P tra i client:
+  - `offer`: inviata da un client → ritrasmessa all’altro.
+  - `answer`: risposta del secondo client → ritrasmessa al primo.
+  - `candidate`: candidati ICE → ritrasmessi all’altro peer.
+
+  Il server non interpreta questi messaggi: li passa semplicemente da un giocatore all’altro.
+
+
+- **Comunicazione con il Dispatcher**
+  - Ricezione messaggi dal processo padre tramite `stdin`.  
+  - Invio continuo dello stato stanza (roomID + playerCount) tramite `stdout`.  
+  Questo permette al Dispatcher di aggiornare la lobby in tempo reale.
+
+
+
+**Avvio del server**  
+Il Room Server viene avviato come processo figlio dal Dispatcher e si mette in ascolto sulla porta assegnata.  
+Al momento dell’avvio stampa nel terminale un messaggio di conferma nel formato:
+
+#### `Room Server for [roomID] started on port [port]`
+---
+
+## 6. Sequence Diagram
+ 
+ 
+![diagrammaFunzionamento](game-ui/public/assets/Sequence_diagram.jpg)
 
 
