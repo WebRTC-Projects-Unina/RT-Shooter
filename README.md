@@ -389,7 +389,7 @@ Al momento dell’avvio stampa nel terminale un messaggio di conferma nel format
 #### `Room Server for [roomID] started on port [port]`
 ---
 
-## 6. Sequence Diagram
+## Sequence Diagram
  
  
 ![diagrammaFunzionamento](game-ui/public/assets/Sequence_diagram.jpg)
