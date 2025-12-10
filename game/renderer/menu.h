@@ -7,9 +7,23 @@
 #include <imgui_impl_opengl3.h>
 #include <GLFW/glfw3.h> 
 #include "emjs_functions.h"
+#include <vector>
+#include <string>
 
 bool b_debug_menu_rendering = false;
 bool b_pause_menu_rendering = false;
+bool b_chat_rendering = false;
+
+// Variabili per la chat
+struct ChatMessage {
+    std::string text;
+    bool isMine;  // true = mio messaggio, false = messaggio nemico
+    float timestamp;
+};
+
+std::vector<ChatMessage> chatMessages;
+char chatInputBuffer[256] = "";
+bool chatInputFocused = false;
 
 
 void imgui_style_setup(){
@@ -159,6 +173,107 @@ void crosshair_rendering() {
     // Punto centrale piccolo
     draw_list->AddCircleFilled(center, 0.5f, col_white, 4);
 
+    ImGui::End();
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+
+void chat_rendering(bool isActive) {
+    ImGuiWindowFlags window_flags = 
+        ImGuiWindowFlags_NoDecoration | 
+        ImGuiWindowFlags_NoMove | 
+        ImGuiWindowFlags_NoSavedSettings | 
+        ImGuiWindowFlags_NoCollapse;
+    
+    // Se la chat non è attiva, disabilita l'input
+    if (!isActive) {
+        window_flags |= ImGuiWindowFlags_NoInputs;
+    }
+
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    // Posiziona la chat in basso a sinistra
+    float chatWidth = 400.0f;
+    float chatHeight = 300.0f;
+    float margin = 20.0f;
+    
+    ImGui::SetNextWindowPos(ImVec2(margin, winHeight - chatHeight - margin));
+    ImGui::SetNextWindowSize(ImVec2(chatWidth, chatHeight));
+    
+    // Trasparenza dinamica: più trasparente se non attiva
+    float bgAlpha = isActive ? 0.85f : 0.3f;
+    ImGui::SetNextWindowBgAlpha(bgAlpha);
+    
+    ImGui::Begin("Chat", NULL, window_flags);
+    
+    // Area messaggi (scrollabile)
+    float inputHeight = isActive ? -30 : 0;  // Nascondi input se non attiva
+    ImGui::BeginChild("ChatMessages", ImVec2(0, inputHeight), true);
+    
+    // Trasparenza testo: più trasparente se non attiva
+    float textAlpha = isActive ? 1.0f : 0.5f;
+    
+    for (const auto& msg : chatMessages) {
+        if (msg.isMine) {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 1.0f, 0.4f, textAlpha)); // Verde
+            ImGui::Text("[Tu]: %s", msg.text.c_str());
+        } else {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.4f, 0.4f, textAlpha)); // Rosso
+            ImGui::Text("[Nemico]: %s", msg.text.c_str());
+        }
+        ImGui::PopStyleColor();
+    }
+    
+    // Auto-scroll verso il basso quando arrivano nuovi messaggi
+    if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
+        ImGui::SetScrollHereY(1.0f);
+    
+    ImGui::EndChild();
+    
+    // Input box visibile SOLO se la chat è attiva
+    if (isActive) {
+        ImGui::Separator();
+        
+        // Focus automatico quando la chat diventa attiva
+        if (!chatInputFocused) {
+            ImGui::SetKeyboardFocusHere();
+            chatInputFocused = true;
+        }
+        
+        // Input text con callback per Invio
+        if (ImGui::InputText("##ChatInput", chatInputBuffer, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
+            // Messaggio inviato quando premi Invio
+            if (strlen(chatInputBuffer) > 0) {
+                // Aggiungi il messaggio alla lista locale
+                ChatMessage myMsg;
+                myMsg.text = std::string(chatInputBuffer);
+                myMsg.isMine = true;
+                myMsg.timestamp = glfwGetTime();
+                chatMessages.push_back(myMsg);
+                
+                // TODO: Invia il messaggio al server tramite socket
+                // sendChatMessage(chatInputBuffer);
+                
+                // Pulisci l'input
+                memset(chatInputBuffer, 0, sizeof(chatInputBuffer));
+            }
+            
+            // Chiudi la chat dopo l'invio (diventa passiva)
+            b_chat_rendering = false;
+            chatInputFocused = false;
+        }
+        
+        // ESC chiude la chat (diventa passiva)
+        if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+            b_chat_rendering = false;
+            chatInputFocused = false;
+            memset(chatInputBuffer, 0, sizeof(chatInputBuffer));
+        }
+    }
+    
     ImGui::End();
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
