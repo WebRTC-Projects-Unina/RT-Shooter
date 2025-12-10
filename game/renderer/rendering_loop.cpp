@@ -1,4 +1,3 @@
-
 #include <iostream>
 
 #include <GL/gl.h>
@@ -47,11 +46,17 @@ void textureLoad(unsigned int* texture, const char* path);
 void mouse_callback(GLFWwindow* window);
 void processInput(GLFWwindow *window);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+void shoot_raycast();
 
 
 ClientPlayer player(glm::vec3(3.0f, 3.0f, 3.0f), glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, -1.0f));
 int b_lastPressed_KEY_APOSTROPHE = 0;
 int b_lastPressed_KEY_M = 0;
+int b_lastPressed_MOUSE_LEFT = 0;
+
+// Variabili per il sistema di sparo
+float lastShootTime = 0.0f;
+float shootCooldown = 0.2f;  // 200ms tra uno sparo e l'altro (5 spari/sec)
 
 // Questa funzione verrà chiamata direttamente da JS
 
@@ -415,6 +420,9 @@ glfwSetWindowSize(window, winWidth, winHeight);
 
         if(b_debug_menu_rendering) debug_menu_rendering(player.getPosition(), enemyPosition);
         if(b_pause_menu_rendering) {pause_menu_rendering(); b_debug_menu_rendering = false;}
+        
+        // Renderizza il mirino sempre visibile in gioco (non durante la pausa)
+        if(!b_pause_menu_rendering) crosshair_rendering();
 
 
 
@@ -478,6 +486,23 @@ void processInput(GLFWwindow *window)
             player.processMovement(RIGHT, frameDeltaTime);
         if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
             player.processMovement(JUMP, frameDeltaTime);
+        
+        // Rilevamento sparo con mouse sinistro
+        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) 
+            b_lastPressed_MOUSE_LEFT = GLFW_PRESS;
+        
+        if (b_lastPressed_MOUSE_LEFT == GLFW_PRESS && 
+            glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) != GLFW_PRESS)
+        {
+            b_lastPressed_MOUSE_LEFT = 0;
+            
+            // Verifica cooldown per evitare spam
+            double currentTime = glfwGetTime();
+            if (currentTime - lastShootTime >= shootCooldown) {
+                shoot_raycast();  // Esegui il raycast e invia lo sparo
+                lastShootTime = currentTime;
+            }
+        }
     }
 
     
@@ -538,3 +563,74 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
     player.camera.ProcessMouseScroll(static_cast<float>(yoffset));
 }
+
+
+void shoot_raycast() {
+    // 1. Ottieni la posizione e direzione dalla camera del giocatore
+    glm::vec3 shooterPos = player.camera.Position;
+    glm::vec3 shootDirection = player.camera.Front;  // Front è la direzione in cui guarda la camera
+    
+    // 2. Definisci la hitbox del nemico (AABB - Axis Aligned Bounding Box)
+    glm::vec3 enemyCenter = glm::vec3(enemyPosition.x, enemyPosition.y + 0.1f, enemyPosition.z);
+    glm::vec3 hitboxSize = glm::vec3(0.1f, 0.2f, 0.1f);  // Larghezza x Altezza x Profondità della hitbox
+    
+    // Calcola min e max della hitbox
+    glm::vec3 boxMin = enemyCenter - hitboxSize * 0.5f;
+    glm::vec3 boxMax = enemyCenter + hitboxSize * 0.5f;
+    
+    // 3. Ray-AABB intersection (algoritmo di Slabs)
+    float tMin = 0.0f;
+    float tMax = 100.0f;  // Distanza massima del raycast
+    
+    for (int i = 0; i < 3; i++) {  // Per ogni asse (x, y, z)
+        if (abs(shootDirection[i]) < 0.0001f) {
+            // Raggio parallelo all'asse - controlla se è fuori dalla slab
+            if (shooterPos[i] < boxMin[i] || shooterPos[i] > boxMax[i]) {
+                // Non c'è intersezione
+                tMax = -1.0f;
+                break;
+            }
+        } else {
+            // Calcola intersezioni con i piani della slab
+            float t1 = (boxMin[i] - shooterPos[i]) / shootDirection[i];
+            float t2 = (boxMax[i] - shooterPos[i]) / shootDirection[i];
+            
+            if (t1 > t2) std::swap(t1, t2);  // Assicurati che t1 < t2
+            
+            tMin = std::max(tMin, t1);
+            tMax = std::min(tMax, t2);
+            
+            if (tMin > tMax) break;  // Nessuna intersezione
+        }
+    }
+    
+    // 4. Verifica se c'è stata un'intersezione valida
+    bool isHit = (tMin <= tMax) && (tMax >= 0.0f) && (tMin <= 100.0f);
+    
+    if (isHit) {
+        // 5. Calcola la distanza del colpo
+        float hitDistance = tMin;
+        glm::vec3 hitPoint = shooterPos + shootDirection * hitDistance;
+        
+        // 6. Calcola il danno base
+        float baseDamage = 25.0f;
+        float damage = baseDamage;
+        
+        // Riduci il danno in base alla distanza
+        if (hitDistance > 30.0f) {
+            damage *= 0.7f;  // 30% di danno in meno se sei lontano
+        }
+        
+        // 7. Invia l'evento di sparo al server con i dati
+        sendShootEvent(shooterPos, shootDirection, damage, hitDistance);
+        
+        std::cout << "HIT! Damage: " << damage << " Distance: " << hitDistance 
+                  << " Point: (" << hitPoint.x << ", " << hitPoint.y << ", " << hitPoint.z << ")" << std::endl;
+    } else {
+        // Sparo mancato - invia comunque al server per validazione (anti-cheat)
+        sendShootEvent(shooterPos, shootDirection, 0.0f, 0.0f);
+        
+        std::cout << "MISS! Ray didn't intersect enemy hitbox" << std::endl;
+    }
+}
+

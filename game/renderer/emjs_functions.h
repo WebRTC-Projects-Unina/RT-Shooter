@@ -94,6 +94,24 @@ void sendVec3(glm::vec3 v) {
     sendPosizione(json.c_str());
 }
 
+EM_JS(void, sendShootData, (const char* json), {
+    if(!Module.socket) return;
+    Module.socket.emit("player_shoot", JSON.parse(UTF8ToString(json)));
+});
+
+void sendShootEvent(glm::vec3 position, glm::vec3 direction, float damage, float distance) {
+    std::stringstream ss;
+    ss << "{ "
+       << "\"pos\": { \"x\": " << position.x << ", \"y\": " << position.y << ", \"z\": " << position.z << " }, "
+       << "\"dir\": { \"x\": " << direction.x << ", \"y\": " << direction.y << ", \"z\": " << direction.z << " }, "
+       << "\"damage\": " << damage << ", "
+       << "\"distance\": " << distance
+       << " }";
+    std::string json = ss.str();
+    
+    sendShootData(json.c_str());
+}
+
 EM_JS(int, canvas_get_width, (), {
   
   const canvasElement = document.querySelector('#canvas');
