@@ -1,4 +1,3 @@
-
 #include <iostream>
 
 #include <GL/gl.h>
@@ -415,6 +414,9 @@ glfwSetWindowSize(window, winWidth, winHeight);
 
         if(b_debug_menu_rendering) debug_menu_rendering(player.getPosition(), enemyPosition);
         if(b_pause_menu_rendering) {pause_menu_rendering(); b_debug_menu_rendering = false;}
+        
+        // Renderizza il mirino sempre visibile in gioco (non durante la pausa)
+        if(!b_pause_menu_rendering) crosshair_rendering();
 
 
 
@@ -538,3 +540,4 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
     player.camera.ProcessMouseScroll(static_cast<float>(yoffset));
 }
+

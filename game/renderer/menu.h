@@ -113,6 +113,58 @@ void debug_menu_rendering(glm::vec3 playerPos, glm::vec3 enemyPosition) {
 }
 
 
+void crosshair_rendering() {
+    ImGuiWindowFlags window_flags = 
+        ImGuiWindowFlags_NoDecoration | 
+        ImGuiWindowFlags_NoMove | 
+        ImGuiWindowFlags_NoSavedSettings | 
+        ImGuiWindowFlags_NoBackground |
+        ImGuiWindowFlags_NoInputs;
+
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    float centerX = winWidth / 2.0f;
+    float centerY = winHeight / 2.0f;
+    
+    ImGui::SetNextWindowPos(ImVec2(centerX - 30, centerY - 30));
+    ImGui::SetNextWindowSize(ImVec2(60, 60));
+    
+    ImGui::Begin("Crosshair", NULL, window_flags);
+    
+    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+    ImVec2 center(centerX, centerY);
+    
+    ImU32 col_white = ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+    
+    // Parametri dal codice Valorant decodificato
+    float inner_line_length = 10.0f;   // l;4 
+    float inner_line_offset = 0.0f;   // o;0 (inizia dal centro)
+    float thickness = 1.5f;            // b;0 (boldness minima, ma visibile)
+    
+    // Linea verticale (top)
+    draw_list->AddLine(ImVec2(center.x, center.y - inner_line_offset - inner_line_length),
+                       ImVec2(center.x, center.y - inner_line_offset), col_white, thickness);
+    // Linea verticale (bottom)
+    draw_list->AddLine(ImVec2(center.x, center.y + inner_line_offset),
+                       ImVec2(center.x, center.y + inner_line_offset + inner_line_length), col_white, thickness);
+    // Linea orizzontale (left)
+    draw_list->AddLine(ImVec2(center.x - inner_line_offset - inner_line_length, center.y),
+                       ImVec2(center.x - inner_line_offset, center.y), col_white, thickness);
+    // Linea orizzontale (right)
+    draw_list->AddLine(ImVec2(center.x + inner_line_offset, center.y),
+                       ImVec2(center.x + inner_line_offset + inner_line_length, center.y), col_white, thickness);
+    
+    // Punto centrale piccolo
+    draw_list->AddCircleFilled(center, 0.5f, col_white, 4);
+
+    ImGui::End();
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+
 void pause_menu_rendering() {
                     //Inizia il frame ImGui
         ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;
