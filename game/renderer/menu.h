@@ -9,10 +9,12 @@
 #include "emjs_functions.h"
 #include <vector>
 #include <string>
+#include <algorithm>  // Per std::sort
 
 bool b_debug_menu_rendering = false;
 bool b_pause_menu_rendering = false;
 bool b_chat_rendering = false;
+bool b_scoreboard_rendering = false;  // Scoreboard con TAB
 
 // Variabili per la chat
 struct ChatMessage {
@@ -25,6 +27,13 @@ std::vector<ChatMessage> chatMessages;
 char chatInputBuffer[256] = "";
 bool chatInputFocused = false;
 std::string playerNickname = "";  // Vuoto inizialmente, viene settato da SetPlayerNickname
+
+// Variabili per lo scoreboard
+int playerKills = 0;
+int playerDeaths = 0;
+std::string enemyNickname = "";
+int enemyKills = 0;
+int enemyDeaths = 0;
 // Funzione chiamata da JS quando arriva un messaggio di chat
 extern "C" {
 EMSCRIPTEN_KEEPALIVE
@@ -41,6 +50,13 @@ extern "C" {
 EMSCRIPTEN_KEEPALIVE
 void SetPlayerNickname(const char* nickname) {
     playerNickname = std::string(nickname);
+}
+}
+
+extern "C" {
+EMSCRIPTEN_KEEPALIVE
+void OnEnemyJoined(const char* nickname) {
+    enemyNickname = std::string(nickname);
 }
 }
 
@@ -288,6 +304,89 @@ void chat_rendering(bool isActive) {
             chatInputFocused = false;
             memset(chatInputBuffer, 0, sizeof(chatInputBuffer));
         }
+    }
+    
+    ImGui::End();
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+
+void scoreboard_rendering() {
+    ImGuiWindowFlags window_flags = 
+        ImGuiWindowFlags_NoDecoration | 
+        ImGuiWindowFlags_NoMove | 
+        ImGuiWindowFlags_NoSavedSettings | 
+        ImGuiWindowFlags_NoInputs |  // Non blocca input di gioco
+        ImGuiWindowFlags_NoBackground;
+
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    // Dimensioni scoreboard
+    float boardWidth = 500.0f;
+    float boardHeight = 200.0f;
+    
+    // Centra lo scoreboard
+    ImVec2 center = ImVec2(winWidth * 0.5f, winHeight * 0.5f);
+    ImGui::SetNextWindowPos(ImVec2(center.x - boardWidth * 0.5f, center.y - boardHeight * 0.5f));
+    ImGui::SetNextWindowSize(ImVec2(boardWidth, boardHeight));
+    ImGui::SetNextWindowBgAlpha(0.9f);  // Sfondo semi-trasparente
+    
+    ImGui::Begin("Scoreboard", NULL, window_flags);
+    
+    // Titolo centrato
+    ImGui::SetCursorPosX((boardWidth - ImGui::CalcTextSize("SCOREBOARD").x) * 0.5f);
+    ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "SCOREBOARD");
+    ImGui::Separator();
+    ImGui::Spacing();
+    
+    // Prepara i dati per la tabella (ordina per kills)
+    struct PlayerStats {
+        std::string nickname;
+        int kills;
+        int deaths;
+        bool isMe;
+    };
+    
+    std::vector<PlayerStats> players;
+    players.push_back({playerNickname.empty() ? "You" : playerNickname, playerKills, playerDeaths, true});
+    if (!enemyNickname.empty()) {
+        players.push_back({enemyNickname, enemyKills, enemyDeaths, false});
+    }
+    
+    // Ordina per kills (decrescente)
+    std::sort(players.begin(), players.end(), [](const PlayerStats& a, const PlayerStats& b) {
+        return a.kills > b.kills;
+    });
+    
+    // Tabella con 3 colonne: Nickname | Kills | Deaths
+    if (ImGui::BeginTable("ScoreTable", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
+        // Header
+        ImGui::TableSetupColumn("Nickname", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoHide);
+        ImGui::TableSetupColumn("Kills", ImGuiTableColumnFlags_WidthFixed, 80.0f);
+        ImGui::TableSetupColumn("Deaths", ImGuiTableColumnFlags_WidthFixed, 80.0f);
+        ImGui::TableHeadersRow();
+        
+        // Righe dei player
+        for (const auto& player : players) {
+            ImGui::TableNextRow();
+            
+            // Colore verde per te, rosso per nemico
+            ImVec4 color = player.isMe ? ImVec4(0.4f, 1.0f, 0.4f, 1.0f) : ImVec4(1.0f, 0.4f, 0.4f, 1.0f);
+            
+            ImGui::TableSetColumnIndex(0);
+            ImGui::TextColored(color, "%s", player.nickname.c_str());
+            
+            ImGui::TableSetColumnIndex(1);
+            ImGui::TextColored(color, "%d", player.kills);
+            
+            ImGui::TableSetColumnIndex(2);
+            ImGui::TextColored(color, "%d", player.deaths);
+        }
+        
+        ImGui::EndTable();
     }
     
     ImGui::End();
