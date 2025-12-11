@@ -170,7 +170,6 @@ glfwSetWindowSize(window, winWidth, winHeight);
 
 
 
-
             // first, configure the cube's VAO (and VBO)
 
             glGenBuffers(1, &instanceVBO);
@@ -300,12 +299,7 @@ glfwSetWindowSize(window, winWidth, winHeight);
         //3d
 
        
-        playerTranslations[0] = glm::vec2(0.f,0.f);
-        playerTranslations[1] = glm::vec2(0.f, 0.f);
-        glBindBuffer(GL_ARRAY_BUFFER, playerVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * 2, &playerTranslations[0], GL_STREAM_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0); 
-
+ 
        
 
         glm::mat4 model = glm::mat4(1.f);
@@ -408,22 +402,24 @@ glfwSetWindowSize(window, winWidth, winHeight);
         glBindTexture(GL_TEXTURE_2D, floor_specTexture);
         glBindVertexArray(floorVAO);
         glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 1); 
-
         
-        setPlayerDistance(glm::distance(player.getPosition(), enemyPosition));
-        model = glm::translate(glm::mat4(1.0f), glm::vec3(enemyPosition.x, enemyPosition.y - 0.5,enemyPosition.z)); 
+        
+        setPlayerDistance(glm::distance(player.getPosition(), enemyPlayer.getPosition()));
+        model = glm::translate(glm::mat4(1.0f), glm::vec3(enemyPlayer.getPosition().x, enemyPlayer.getPosition().y - 0.5,enemyPlayer.getPosition().z)); 
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, enemy_diffTexture);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, enemy_diffTexture);
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &model[0][0]);
-        model = glm::translate(glm::mat4(1.0f), glm::vec3(enemyPosition.x, enemyPosition.y - 0.5,enemyPosition.z)); 
+        model = glm::translate(glm::mat4(1.0f), glm::vec3(enemyPlayer.getPosition().x, enemyPlayer.getPosition().y - 0.5,enemyPlayer.getPosition().z)); 
 
         glBindVertexArray(playerVAO);
         glDrawArraysInstanced(GL_TRIANGLES, 0, (sizeof(playerMesh)/sizeof(float))/8, 1); 
 
       
 
-        if(b_debug_menu_rendering) debug_menu_rendering(player.getPosition(), enemyPosition);
+        if(b_debug_menu_rendering) debug_menu_rendering(player.getPosition(), enemyPlayer.getPosition());
         if(b_pause_menu_rendering) {pause_menu_rendering(); b_debug_menu_rendering = false;}
         
         // Logica di respawn - se il player è morto
@@ -660,8 +656,14 @@ void shoot_raycast() {
         float hitDistance = tMin;
         glm::vec3 hitPoint = shooterPos + shootDirection * hitDistance;
         
-        // 6. Danno fisso 40
-        float damage = 40.0f;
+        // 6. Calcola il danno base
+        float baseDamage = 25.0f;
+        float damage = baseDamage;
+        
+        // Riduci il danno in base alla distanza
+        if (hitDistance > 30.0f) {
+            damage *= 0.7f;  // 30% di danno in meno se sei lontano
+        }
         
         // 7. Invia l'evento di sparo al server con i dati
         sendShootEvent(shooterPos, shootDirection, damage, hitDistance);
@@ -669,7 +671,12 @@ void shoot_raycast() {
         std::cout << "HIT! Damage: " << damage << " Distance: " << hitDistance 
                   << " Point: (" << hitPoint.x << ", " << hitPoint.y << ", " << hitPoint.z << ")" << std::endl;
     } else {
+        // Sparo mancato - invia comunque al server per validazione (anti-cheat)
+        sendShootEvent(shooterPos, shootDirection, 0.0f, 0.0f);
+        
         std::cout << "MISS! Ray didn't intersect enemy hitbox" << std::endl;
     }
 }
+
+    }}
 

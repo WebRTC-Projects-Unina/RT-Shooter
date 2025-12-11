@@ -6,53 +6,20 @@
 #include <vector>
 
 
-Collider::Collider(glm::vec2 position, glm::vec2 scale)
+Collider::Collider(glm::vec3 position, glm::vec3 scale, int type)
 {
     m_position = position;
     m_scale = scale;
-    m_vertici = glm::vec4(position.x - (scale.x/2), position.y - (scale.y/2), position.x + (scale.x/2), position.y + (scale.y/2));
-}
-
-Collider::Collider(glm::vec2 position)
-{
-    Collider(position, glm::vec2(COLLIDER_DEFAULT_SCALE));
-}
-
-Collider::Collider(float positionX, float positionY)
-{
-    Collider(glm::vec2(positionX, positionY));
+    m_type = type;
 }
 
 
-Collider::Collider(float positionX, float positionY, glm::vec2 scale)
-{
-    Collider(glm::vec2(positionX, positionY), scale);
+glm::vec3 Collider::getBoxMin()
+{   
+    return m_position - glm::vec3(m_scale.x * 0.5f, 0, m_scale.z * 0.5f);
 }
 
-Collider::Collider(glm::vec2 position, float scaleX, float scaleY)
-{
-    Collider(position, glm::vec2(scaleX, scaleY));
-}
-
-Collider::Collider(glm::vec2 position, float scale)
-{
-    Collider(position, glm::vec2(scale));
-}
-
-bool Collider::isColling(Collider ColliderB)
-{
-       
-    glm::vec4 A = m_vertici;
-    glm::vec4 B = ColliderB.m_vertici;
-
-    return (A.x > B.x && A.x < B.z) && (A.y > B.y && A.y < B.w)
-        || (A.x > B.x && A.x < B.z) && (A.w > B.y && A.w < B.w)
-        || (A.z > B.x && A.z < B.z) && (A.y > B.y && A.y < B.w)
-        || (A.z > B.x && A.z < B.z) && (A.w > B.y && A.w < B.w);
-}
-
-
-bool Collider::areColliding(Collider ColliderA, Collider ColliderB)
-{
-    return ColliderA.isColling(ColliderB);
+glm::vec3 Collider::getBoxMax()
+{   
+    return m_position + glm::vec3(m_scale.x * 0.5f, m_scale.y, m_scale.z * 0.5f);
 }

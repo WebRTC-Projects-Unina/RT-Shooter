@@ -67,9 +67,9 @@ def parse_obj_to_c_array(file_path):
                         nx, ny, nz = normals[vn_idx]
 
                     # Formattazione stringa (aggiunge 'f' alla fine)
-                    line_str = (f"{px:.4f}f, {py:.4f}f, {pz:.4f}f,  "
-                                f"{nx:.4f}f, {ny:.4f}f, {nz:.4f}f,  "
-                                f"{tu:.4f}f, {tv:.4f}f,")
+                    line_str = (f"{px:.6f}f, {py:.6f}f, {pz:.6f}f,  "
+                                f"{nx:.6f}f, {ny:.6f}f, {nz:.6f}f,  "
+                                f"{tu:.6f}f, {tv:.6f}f,")
                     output_lines.append(line_str)
 
     # 2. Stampa output formattato
@@ -83,7 +83,7 @@ def parse_obj_to_c_array(file_path):
 # Salva il tuo modello come 'model.obj' nella stessa cartella o cambia il percorso qui sotto.
 if __name__ == "__main__":
     # Sostituisci con il percorso del tuo file obj
-    input_file = "skybox.obj" 
+    input_file = "personaggio2.obj" 
     
     # Crea un file dummy per testare se non ne hai uno
     import os

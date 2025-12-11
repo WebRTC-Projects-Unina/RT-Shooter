@@ -10,6 +10,9 @@
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
 #include <gtc/type_ptr.hpp>
+#include "../game/Player.h"
+
+
 
 
 #include <fstream>
@@ -33,8 +36,7 @@ void OnMessageFromJS(const char* msg) {
     sscanf(json.c_str(),
            "{ \"x\": %f , \"y\": %f , \"z\": %f }",
            &v.x, &v.y, &v.z);
-
-    enemyPosition = v;
+    enemyPlayer.setPosition(v);
 }
 }
 
