@@ -32,8 +32,9 @@ io.on("connection", (socket) => {
   
   socket.on("join_game", (player) => {
     console.log(`[ROOM ${roomID}] Player joined:`, player);
+    // Salva il nickname del player
+    socket.nickname = player.nickname || player.name || "Unknown";
     io.emit("playerCount", connectedPlayers);
-
   });
 
   socket.onclose = (event) => {
@@ -68,6 +69,15 @@ io.on("connection", (socket) => {
       socket.on("player_update", (data) => {
       //console.log(`[ROOM ${roomID}] Update da ${socket.id}:`, data);
       socket.broadcast.emit("enemy_update", data);
+    });
+    
+    // Gestione messaggi di chat
+    socket.on("chat_message", (data) => {
+      console.log(`[ROOM ${roomID}] Chat message da ${socket.id}:`, data.message);
+      socket.broadcast.emit("chat_message_received", {
+        message: data.message,
+        senderNickname: socket.nickname || "Unknown"
+      });
     });
 
     socket.on("offer", (message) => {

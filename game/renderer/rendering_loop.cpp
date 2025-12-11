@@ -52,6 +52,7 @@ void shoot_raycast();
 ClientPlayer player(glm::vec3(3.0f, 3.0f, 3.0f), glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, -1.0f));
 int b_lastPressed_KEY_APOSTROPHE = 0;
 int b_lastPressed_KEY_M = 0;
+int b_lastPressed_KEY_T = 0;
 int b_lastPressed_MOUSE_LEFT = 0;
 
 // Variabili per il sistema di sparo
@@ -421,8 +422,11 @@ glfwSetWindowSize(window, winWidth, winHeight);
         if(b_debug_menu_rendering) debug_menu_rendering(player.getPosition(), enemyPosition);
         if(b_pause_menu_rendering) {pause_menu_rendering(); b_debug_menu_rendering = false;}
         
-        // Renderizza il mirino sempre visibile in gioco (non durante la pausa)
-        if(!b_pause_menu_rendering) crosshair_rendering();
+        // Renderizza la chat: sempre visibile, ma attiva solo se b_chat_rendering == true
+        chat_rendering(b_chat_rendering);
+        
+        // Renderizza il mirino sempre visibile in gioco (non durante la pausa e non durante la chat)
+        if(!b_pause_menu_rendering && !b_chat_rendering) crosshair_rendering();
 
 
 
@@ -475,7 +479,7 @@ void textureLoad(unsigned int* texture, const char* path)
 void processInput(GLFWwindow *window)
 {
     
-    if(b_pause_menu_rendering == false){
+    if(b_pause_menu_rendering == false && b_chat_rendering == false){
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
             player.processMovement(FORWARD, frameDeltaTime);
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -524,6 +528,16 @@ void processInput(GLFWwindow *window)
         lastX = winWidth / 2.0f;
         lastY = winHeight / 2.0f;
 
+    }
+
+    // Tasto T per aprire/chiudere la chat (blocca il tasto se la chat è già attiva)
+    if(glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS && !b_chat_rendering) {
+        b_lastPressed_KEY_T = GLFW_PRESS;
+    }
+    if (b_lastPressed_KEY_T == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_T) != GLFW_PRESS)
+    {
+        b_lastPressed_KEY_T = 0;
+        b_chat_rendering = b_chat_rendering ? false : true;
     }
 
 

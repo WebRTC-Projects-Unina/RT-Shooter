@@ -15,6 +15,8 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <vector>
+#include <iostream>
 
 
 
@@ -57,6 +59,16 @@ EM_JS(void, RegisterSocketIOCallback, (), {
             null,              // ritorno void
             ["string"],        // tipo argomento
             [json]           
+        );
+    });
+    
+    // Gestione messaggi di chat in arrivo
+    Module.socket.on("chat_message_received", (data) => {
+        Module.ccall(
+            "OnChatMessageReceived",
+            null,
+            ["string", "string"],
+            [data.message, data.senderNickname]
         );
     });
 });
@@ -110,6 +122,19 @@ void sendShootEvent(glm::vec3 position, glm::vec3 direction, float damage, float
     std::string json = ss.str();
     
     sendShootData(json.c_str());
+}
+// Funzioni per la chat
+EM_JS(void, sendChatData, (const char* json), {
+    if(!Module.socket) return;
+    Module.socket.emit("chat_message", JSON.parse(UTF8ToString(json)));
+});
+// Invia un messaggio di chat al server
+void sendChatMessage(const char* message) {
+    std::stringstream ss;
+    ss << "{ \"message\": \"" << message << "\" }";
+    std::string json = ss.str();
+    
+    sendChatData(json.c_str());
 }
 
 EM_JS(int, canvas_get_width, (), {
