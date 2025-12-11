@@ -237,6 +237,74 @@ void crosshair_rendering() {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
+void health_bar_rendering() {
+    ImGuiWindowFlags window_flags = 
+        ImGuiWindowFlags_NoDecoration | 
+        ImGuiWindowFlags_NoMove | 
+        ImGuiWindowFlags_NoSavedSettings | 
+        ImGuiWindowFlags_NoBackground |
+        ImGuiWindowFlags_NoInputs;
+
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    ImGui::SetNextWindowPos(ImVec2(0, 0));
+    ImGui::SetNextWindowSize(ImVec2(winWidth, winHeight));
+    ImGui::Begin("HealthBar", NULL, window_flags);
+    
+    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+    
+    // Dimensioni e posizione della barra HP
+    float barWidth = 300.0f;
+    float barHeight = 25.0f;
+    float barX = (winWidth - barWidth) * 0.5f;  // Centrata orizzontalmente
+    float barY = winHeight - 60.0f;  // 60px dal basso
+    
+    // Background della barra (nero semi-trasparente)
+    ImU32 col_bg = IM_COL32(0, 0, 0, 150);
+    draw_list->AddRectFilled(ImVec2(barX, barY), ImVec2(barX + barWidth, barY + barHeight), col_bg, 3.0f);
+    
+    // Calcola la larghezza della barra in base agli HP
+    float hpPercent = playerHP / 100.0f;
+    if (hpPercent < 0.0f) hpPercent = 0.0f;
+    if (hpPercent > 1.0f) hpPercent = 1.0f;
+    
+    float fillWidth = barWidth * hpPercent;
+    
+    // Colore della barra: verde -> giallo -> rosso in base agli HP
+    ImU32 col_hp;
+    if (hpPercent > 0.5f) {
+        // Verde -> Giallo (HP alto)
+        float t = (hpPercent - 0.5f) * 2.0f;  // 0 a 1
+        col_hp = IM_COL32(255 * (1.0f - t), 255, 0, 255);
+    } else {
+        // Giallo -> Rosso (HP basso)
+        float t = hpPercent * 2.0f;  // 0 a 1
+        col_hp = IM_COL32(255, 255 * t, 0, 255);
+    }
+    
+    // Disegna la barra HP (verde/giallo/rosso)
+    if (fillWidth > 0) {
+        draw_list->AddRectFilled(ImVec2(barX, barY), ImVec2(barX + fillWidth, barY + barHeight), col_hp, 3.0f);
+    }
+    
+    // Bordo bianco della barra
+    ImU32 col_border = IM_COL32(255, 255, 255, 255);
+    draw_list->AddRect(ImVec2(barX, barY), ImVec2(barX + barWidth, barY + barHeight), col_border, 3.0f, 0, 2.0f);
+    
+    // Testo HP al centro della barra
+    char hpText[32];
+    sprintf(hpText, "%.0f / 100", playerHP);
+    ImVec2 textSize = ImGui::CalcTextSize(hpText);
+    ImVec2 textPos = ImVec2(barX + (barWidth - textSize.x) * 0.5f, barY + (barHeight - textSize.y) * 0.5f);
+    draw_list->AddText(textPos, IM_COL32(255, 255, 255, 255), hpText);
+
+    ImGui::End();
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
 
 void chat_rendering(bool isActive) {
     ImGuiWindowFlags window_flags = 
@@ -497,6 +565,245 @@ void death_screen_rendering() {
     ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.8f), "%s", killedByText.c_str());
     
     ImGui::End();
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+// FUNZIONE UNIFICATA per tutto l'UI ImGui
+void render_all_ui() {
+    // Inizia il frame ImGui UNA SOLA VOLTA
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+    
+    // ===== CHAT =====
+    {
+        ImGuiWindowFlags window_flags = 
+            ImGuiWindowFlags_NoDecoration | 
+            ImGuiWindowFlags_NoMove | 
+            ImGuiWindowFlags_NoSavedSettings | 
+            ImGuiWindowFlags_NoCollapse;
+        
+        if (!b_chat_rendering) {
+            window_flags |= ImGuiWindowFlags_NoInputs;
+        }
+        
+        float chatWidth = 400.0f;
+        float chatHeight = 300.0f;
+        float margin = 20.0f;
+        
+        ImGui::SetNextWindowPos(ImVec2(margin, winHeight - chatHeight - margin));
+        ImGui::SetNextWindowSize(ImVec2(chatWidth, chatHeight));
+        
+        float bgAlpha = b_chat_rendering ? 0.85f : 0.3f;
+        ImGui::SetNextWindowBgAlpha(bgAlpha);
+        
+        ImGui::Begin("Chat", NULL, window_flags);
+        
+        float inputHeight = b_chat_rendering ? -30 : 0;
+        ImGui::BeginChild("ChatMessages", ImVec2(0, inputHeight), false);
+        
+        for (const auto& msg : chatMessages) {
+            ImVec4 color = msg.isMine ? ImVec4(0.4f, 1.0f, 0.4f, 1.0f) : ImVec4(1.0f, 0.4f, 0.4f, 1.0f);
+            ImGui::TextColored(color, "%s", msg.text.c_str());
+        }
+        
+        if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
+            ImGui::SetScrollHereY(1.0f);
+        
+        ImGui::EndChild();
+        
+        if (b_chat_rendering) {
+            ImGui::Separator();
+            
+            if (!chatInputFocused) {
+                ImGui::SetKeyboardFocusHere();
+                chatInputFocused = true;
+            }
+            
+            if (ImGui::InputText("##ChatInput", chatInputBuffer, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
+                if (strlen(chatInputBuffer) > 0) {
+                    ChatMessage myMsg;
+                    myMsg.text = "[" + playerNickname + "]: " + std::string(chatInputBuffer);
+                    myMsg.isMine = true;
+                    myMsg.timestamp = glfwGetTime();
+                    chatMessages.push_back(myMsg);
+                    
+                    sendChatMessage(chatInputBuffer);
+                }
+                
+                memset(chatInputBuffer, 0, sizeof(chatInputBuffer));
+                b_chat_rendering = false;
+                chatInputFocused = false;
+            }
+        } else {
+            if (chatInputFocused) {
+                chatInputFocused = false;
+                memset(chatInputBuffer, 0, sizeof(chatInputBuffer));
+            }
+        }
+        
+        ImGui::End();
+    }
+    
+    // ===== HEALTH BAR =====
+    if (!b_pause_menu_rendering) {
+        ImGuiWindowFlags window_flags = 
+            ImGuiWindowFlags_NoDecoration | 
+            ImGuiWindowFlags_NoMove | 
+            ImGuiWindowFlags_NoSavedSettings | 
+            ImGuiWindowFlags_NoBackground |
+            ImGuiWindowFlags_NoInputs;
+
+        ImGui::SetNextWindowPos(ImVec2(0, 0));
+        ImGui::SetNextWindowSize(ImVec2(winWidth, winHeight));
+        ImGui::Begin("HealthBar", NULL, window_flags);
+        
+        ImDrawList* draw_list = ImGui::GetWindowDrawList();
+        
+        float barWidth = 300.0f;
+        float barHeight = 25.0f;
+        float barX = (winWidth - barWidth) * 0.5f;
+        float barY = winHeight - 60.0f;
+        
+        ImU32 col_bg = IM_COL32(0, 0, 0, 150);
+        draw_list->AddRectFilled(ImVec2(barX, barY), ImVec2(barX + barWidth, barY + barHeight), col_bg, 3.0f);
+        
+        float hpPercent = playerHP / 100.0f;
+        if (hpPercent < 0.0f) hpPercent = 0.0f;
+        if (hpPercent > 1.0f) hpPercent = 1.0f;
+        
+        float fillWidth = barWidth * hpPercent;
+        
+        ImU32 col_hp;
+        if (hpPercent > 0.5f) {
+            float t = (hpPercent - 0.5f) * 2.0f;
+            col_hp = IM_COL32(255 * (1.0f - t), 255, 0, 255);
+        } else {
+            float t = hpPercent * 2.0f;
+            col_hp = IM_COL32(255, 255 * t, 0, 255);
+        }
+        
+        if (fillWidth > 0) {
+            draw_list->AddRectFilled(ImVec2(barX, barY), ImVec2(barX + fillWidth, barY + barHeight), col_hp, 3.0f);
+        }
+        
+        ImU32 col_border = IM_COL32(255, 255, 255, 255);
+        draw_list->AddRect(ImVec2(barX, barY), ImVec2(barX + barWidth, barY + barHeight), col_border, 3.0f, 0, 2.0f);
+        
+        char hpText[32];
+        sprintf(hpText, "%.0f / 100", playerHP);
+        ImVec2 textSize = ImGui::CalcTextSize(hpText);
+        ImVec2 textPos = ImVec2(barX + (barWidth - textSize.x) * 0.5f, barY + (barHeight - textSize.y) * 0.5f);
+        draw_list->AddText(textPos, IM_COL32(255, 255, 255, 255), hpText);
+
+        ImGui::End();
+    }
+    
+    // ===== CROSSHAIR =====
+    if (!b_pause_menu_rendering && !b_chat_rendering) {
+        ImGuiWindowFlags window_flags = 
+            ImGuiWindowFlags_NoDecoration | 
+            ImGuiWindowFlags_NoMove | 
+            ImGuiWindowFlags_NoSavedSettings | 
+            ImGuiWindowFlags_NoBackground |
+            ImGuiWindowFlags_NoInputs;
+
+        ImGui::SetNextWindowPos(ImVec2(0, 0));
+        ImGui::SetNextWindowSize(ImVec2(winWidth, winHeight));
+        ImGui::Begin("Crosshair", NULL, window_flags);
+        
+        ImDrawList* draw_list = ImGui::GetWindowDrawList();
+        ImVec2 center = ImVec2(winWidth * 0.5f, winHeight * 0.5f);
+        
+        ImU32 col_white = IM_COL32(255, 255, 255, 255);
+        float thickness = 1.5f;
+        float inner_line_length = 10.0f;
+        float inner_line_offset = 0.0f;  // Parte dal centro
+        
+        draw_list->AddLine(ImVec2(center.x, center.y - inner_line_offset - inner_line_length),
+                          ImVec2(center.x, center.y - inner_line_offset), col_white, thickness);
+        draw_list->AddLine(ImVec2(center.x, center.y + inner_line_offset),
+                          ImVec2(center.x, center.y + inner_line_offset + inner_line_length), col_white, thickness);
+        draw_list->AddLine(ImVec2(center.x - inner_line_offset - inner_line_length, center.y),
+                          ImVec2(center.x - inner_line_offset, center.y), col_white, thickness);
+        draw_list->AddLine(ImVec2(center.x + inner_line_offset, center.y),
+                          ImVec2(center.x + inner_line_offset + inner_line_length, center.y), col_white, thickness);
+        
+        draw_list->AddCircleFilled(center, 0.5f, col_white, 4);
+
+        ImGui::End();
+    }
+    
+    // ===== SCOREBOARD =====
+    if (b_scoreboard_rendering) {
+        ImGuiWindowFlags window_flags = 
+            ImGuiWindowFlags_NoDecoration | 
+            ImGuiWindowFlags_NoMove | 
+            ImGuiWindowFlags_NoSavedSettings | 
+            ImGuiWindowFlags_NoInputs |
+            ImGuiWindowFlags_NoBackground;
+
+        float boardWidth = 500.0f;
+        float boardHeight = 200.0f;
+        
+        ImVec2 center = ImVec2(winWidth * 0.5f, winHeight * 0.5f);
+        ImGui::SetNextWindowPos(ImVec2(center.x - boardWidth * 0.5f, center.y - boardHeight * 0.5f));
+        ImGui::SetNextWindowSize(ImVec2(boardWidth, boardHeight));
+        ImGui::SetNextWindowBgAlpha(0.9f);
+        
+        ImGui::Begin("Scoreboard", NULL, window_flags);
+        
+        ImGui::SetCursorPosX((boardWidth - ImGui::CalcTextSize("SCOREBOARD").x) * 0.5f);
+        ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "SCOREBOARD");
+        ImGui::Separator();
+        ImGui::Spacing();
+        
+        struct PlayerStats {
+            std::string nickname;
+            int kills;
+            int deaths;
+            bool isMe;
+        };
+        
+        std::vector<PlayerStats> players;
+        players.push_back({playerNickname.empty() ? "You" : playerNickname, playerKills, playerDeaths, true});
+        if (!enemyNickname.empty()) {
+            players.push_back({enemyNickname, enemyKills, enemyDeaths, false});
+        }
+        
+        std::sort(players.begin(), players.end(), [](const PlayerStats& a, const PlayerStats& b) {
+            return a.kills > b.kills;
+        });
+        
+        if (ImGui::BeginTable("ScoreTable", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
+            ImGui::TableSetupColumn("Nickname", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoHide);
+            ImGui::TableSetupColumn("Kills", ImGuiTableColumnFlags_WidthFixed, 80.0f);
+            ImGui::TableSetupColumn("Deaths", ImGuiTableColumnFlags_WidthFixed, 80.0f);
+            ImGui::TableHeadersRow();
+            
+            for (const auto& player : players) {
+                ImGui::TableNextRow();
+                
+                ImVec4 color = player.isMe ? ImVec4(0.4f, 1.0f, 0.4f, 1.0f) : ImVec4(1.0f, 0.4f, 0.4f, 1.0f);
+                
+                ImGui::TableSetColumnIndex(0);
+                ImGui::TextColored(color, "%s", player.nickname.c_str());
+                
+                ImGui::TableSetColumnIndex(1);
+                ImGui::TextColored(color, "%d", player.kills);
+                
+                ImGui::TableSetColumnIndex(2);
+                ImGui::TextColored(color, "%d", player.deaths);
+            }
+            
+            ImGui::EndTable();
+        }
+        
+        ImGui::End();
+    }
+    
+    // Fine del frame ImGui - Render UNA SOLA VOLTA
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }

@@ -448,14 +448,8 @@ glfwSetWindowSize(window, winWidth, winHeight);
             return;  // Non renderizzare il resto della scena durante la morte
         }
         
-        // Renderizza la chat: sempre visibile, ma attiva solo se b_chat_rendering == true
-        chat_rendering(b_chat_rendering);
-        
-        // Renderizza lo scoreboard se TAB è premuto
-        if(b_scoreboard_rendering) scoreboard_rendering();
-        
-        // Renderizza il mirino sempre visibile in gioco (non durante la pausa e non durante la chat)
-        if(!b_pause_menu_rendering && !b_chat_rendering) crosshair_rendering();
+        // Renderizza TUTTA l'UI in un unico frame ImGui
+        render_all_ui();
 
 
 
@@ -566,7 +560,12 @@ void processInput(GLFWwindow *window)
     if (b_lastPressed_KEY_T == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_T) != GLFW_PRESS)
     {
         b_lastPressed_KEY_T = 0;
-        b_chat_rendering = b_chat_rendering ? false : true;
+        b_chat_rendering = !b_chat_rendering;
+        
+        // Reset del focus quando apri la chat per garantire autofocus
+        if (b_chat_rendering) {
+            chatInputFocused = false;
+        }
     }
 
     // Tasto TAB per mostrare lo scoreboard (hold to show)
