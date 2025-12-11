@@ -62,6 +62,16 @@ EM_JS(void, RegisterSocketIOCallback, (), {
         );
     });
     
+    // Quando il nemico si connette
+    Module.socket.on("enemy_joined", (data) => {
+        Module.ccall(
+            "OnEnemyJoined",
+            null,
+            ["string"],
+            [data.nickname]
+        );
+    });
+    
     // Gestione messaggi di chat in arrivo
     Module.socket.on("chat_message_received", (data) => {
         Module.ccall(

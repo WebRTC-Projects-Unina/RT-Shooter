@@ -425,6 +425,9 @@ glfwSetWindowSize(window, winWidth, winHeight);
         // Renderizza la chat: sempre visibile, ma attiva solo se b_chat_rendering == true
         chat_rendering(b_chat_rendering);
         
+        // Renderizza lo scoreboard se TAB è premuto
+        if(b_scoreboard_rendering) scoreboard_rendering();
+        
         // Renderizza il mirino sempre visibile in gioco (non durante la pausa e non durante la chat)
         if(!b_pause_menu_rendering && !b_chat_rendering) crosshair_rendering();
 
@@ -540,6 +543,12 @@ void processInput(GLFWwindow *window)
         b_chat_rendering = b_chat_rendering ? false : true;
     }
 
+    // Tasto TAB per mostrare lo scoreboard (hold to show)
+    if(glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS) {
+        b_scoreboard_rendering = true;
+    } else {
+        b_scoreboard_rendering = false;
+    }
 
     if ( glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS){
         emscripten_request_pointerlock("#canvas", true);

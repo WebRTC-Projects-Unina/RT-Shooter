@@ -14,6 +14,7 @@ const io = new Server(server, {
 });
  
 let connectedPlayers = 0;
+const playersInRoom = new Map();  // Tiene traccia dei player: socket.id -> nickname
 
 process.stdin.on('data', (data) => {
   const msg = JSON.parse(data.toString());
@@ -34,6 +35,24 @@ io.on("connection", (socket) => {
     console.log(`[ROOM ${roomID}] Player joined:`, player);
     // Salva il nickname del player
     socket.nickname = player.nickname || player.name || "Unknown";
+    
+    console.log(`[ROOM ${roomID}] Current players in room BEFORE adding new player:`, Array.from(playersInRoom.entries()));
+    
+    // PRIMA informa il nuovo player di tutti i player già presenti
+    for (const [id, nickname] of playersInRoom) {
+      socket.emit("enemy_joined", { nickname: nickname });
+      console.log(`[ROOM ${roomID}] Sending existing player ${nickname} to ${socket.nickname}`);
+    }
+    
+    // POI aggiungi il nuovo player alla Map
+    playersInRoom.set(socket.id, socket.nickname);
+    
+    // Informa tutti gli altri player che è entrato qualcuno
+    socket.broadcast.emit("enemy_joined", {
+      nickname: socket.nickname
+    });
+    console.log(`[ROOM ${roomID}] Broadcasting new player ${socket.nickname} to others`);
+    
     io.emit("playerCount", connectedPlayers);
   });
 
@@ -52,6 +71,9 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
   console.log(`[ROOM ${roomID}] Player disconnected:`, socket.id);
+  
+  // Rimuovi dalla mappa dei player
+  playersInRoom.delete(socket.id);
   
   connectedPlayers--;
   io.emit("playerCount", connectedPlayers);

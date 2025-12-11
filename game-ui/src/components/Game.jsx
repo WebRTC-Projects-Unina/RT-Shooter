@@ -131,9 +131,12 @@ let script = document.createElement("script");
           window.Module.ccall('SetPlayerNickname', null, ['string'], [playerNicknameToSet]);
         }
         // Registra le callback socket quando il runtime è pronto
-        if (window.Module.socket && window.Module.RegisterSocketIOCallback) {
+        if (window.Module.RegisterSocketIOCallback) {
           window.Module.RegisterSocketIOCallback();
         }
+        // ADESSO che i callback sono registrati, fai join_game
+        gameSocket.emit("join_game", { nickname: playerNicknameToSet });
+        console.log("join_game emitted AFTER callbacks registered");
       }
     };
 
@@ -143,6 +146,9 @@ let script = document.createElement("script");
       console.log("Connected to room server:", port);
       // Salva il nickname per settarlo quando il runtime è pronto
       playerNicknameToSet = nickname;
+      
+      // Imposta il socket SUBITO, prima di caricare lo script
+      window.Module.socket = gameSocket;
       
       script.src = "/test.js";
       script.async = true;
@@ -229,10 +235,8 @@ let script = document.createElement("script");
       gameSocket.on('message', function(e) {
       console.log('Got nsg! ', e);  });
 
-      gameSocket.emit("join_game", { nickname });
-      window.Module.socket = gameSocket;
-
- 
+      // Il socket è già stato impostato sopra, prima di caricare lo script
+      // join_game verrà fatto in onRuntimeInitialized
       if (window.Module.RegisterSocketIOCallback) {
         window.Module.RegisterSocketIOCallback();
       }
