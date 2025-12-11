@@ -81,6 +81,18 @@ EM_JS(void, RegisterSocketIOCallback, (), {
             [data.message, data.senderNickname]
         );
     });
+    
+    // Quando il nemico spara - calcola il danno lato client
+    Module.socket.on("player_shot", (data) => {
+        const damage = (data.damage !== undefined) ? data.damage : 25;  // Permette 0 danno se miss
+        const shooterNickname = data.shooterNickname || "Unknown";
+        Module.ccall(
+            "OnEnemyShot",
+            null,
+            ["number", "string"],
+            [damage, shooterNickname]
+        );
+    });
 });
 
 

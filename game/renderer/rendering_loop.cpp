@@ -59,6 +59,10 @@ int b_lastPressed_MOUSE_LEFT = 0;
 float lastShootTime = 0.0f;
 float shootCooldown = 0.2f;  // 200ms tra uno sparo e l'altro (5 spari/sec)
 
+// Variabili per respawn
+float deathTime = 0.0f;
+float respawnDelay = 5.0f;  // 5 secondi prima del respawn
+
 // Questa funzione verrà chiamata direttamente da JS
 
 
@@ -422,6 +426,28 @@ glfwSetWindowSize(window, winWidth, winHeight);
         if(b_debug_menu_rendering) debug_menu_rendering(player.getPosition(), enemyPosition);
         if(b_pause_menu_rendering) {pause_menu_rendering(); b_debug_menu_rendering = false;}
         
+        // Logica di respawn - se il player è morto
+        if(b_death_screen) {
+            if(deathTime == 0.0f) {
+                deathTime = glfwGetTime();  // Registra il momento della morte
+            }
+            
+            float timeSinceDeath = glfwGetTime() - deathTime;
+            
+            // Renderizza la schermata di morte
+            death_screen_rendering();
+            
+            // Se sono passati 5 secondi, respawna
+            if(timeSinceDeath >= respawnDelay) {
+                playerHP = 100.0f;
+                b_death_screen = false;
+                deathTime = 0.0f;
+                killedByNickname = "";
+                std::cout << "Respawned! HP: " << playerHP << std::endl;
+            }
+            return;  // Non renderizzare il resto della scena durante la morte
+        }
+        
         // Renderizza la chat: sempre visibile, ma attiva solo se b_chat_rendering == true
         chat_rendering(b_chat_rendering);
         
@@ -482,7 +508,7 @@ void textureLoad(unsigned int* texture, const char* path)
 void processInput(GLFWwindow *window)
 {
     
-    if(b_pause_menu_rendering == false && b_chat_rendering == false){
+    if(b_pause_menu_rendering == false && b_chat_rendering == false && b_death_screen == false){
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
             player.processMovement(FORWARD, frameDeltaTime);
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -635,14 +661,8 @@ void shoot_raycast() {
         float hitDistance = tMin;
         glm::vec3 hitPoint = shooterPos + shootDirection * hitDistance;
         
-        // 6. Calcola il danno base
-        float baseDamage = 25.0f;
-        float damage = baseDamage;
-        
-        // Riduci il danno in base alla distanza
-        if (hitDistance > 30.0f) {
-            damage *= 0.7f;  // 30% di danno in meno se sei lontano
-        }
+        // 6. Danno fisso 40
+        float damage = 40.0f;
         
         // 7. Invia l'evento di sparo al server con i dati
         sendShootEvent(shooterPos, shootDirection, damage, hitDistance);
@@ -650,9 +670,6 @@ void shoot_raycast() {
         std::cout << "HIT! Damage: " << damage << " Distance: " << hitDistance 
                   << " Point: (" << hitPoint.x << ", " << hitPoint.y << ", " << hitPoint.z << ")" << std::endl;
     } else {
-        // Sparo mancato - invia comunque al server per validazione (anti-cheat)
-        sendShootEvent(shooterPos, shootDirection, 0.0f, 0.0f);
-        
         std::cout << "MISS! Ray didn't intersect enemy hitbox" << std::endl;
     }
 }

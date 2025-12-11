@@ -56,6 +56,14 @@ io.on("connection", (socket) => {
     io.emit("playerCount", connectedPlayers);
   });
 
+  socket.on("player_shoot", (data) => {
+    // Server relay - invia lo sparo all'altro player CON il nickname del shooter
+    socket.broadcast.emit("player_shot", {
+      ...data,
+      shooterNickname: socket.nickname
+    });
+  });
+
   socket.onclose = (event) => {
   console.log("WebSocket disconnessa.");
   

@@ -34,6 +34,12 @@ int playerDeaths = 0;
 std::string enemyNickname = "";
 int enemyKills = 0;
 int enemyDeaths = 0;
+
+// Variabili per l'HP
+float playerHP = 100.0f;
+float enemyHP = 100.0f;
+std::string killedByNickname = "";  // Nome di chi ci ha ucciso
+bool b_death_screen = false;  // True quando il player è morto
 // Funzione chiamata da JS quando arriva un messaggio di chat
 extern "C" {
 EMSCRIPTEN_KEEPALIVE
@@ -57,6 +63,24 @@ extern "C" {
 EMSCRIPTEN_KEEPALIVE
 void OnEnemyJoined(const char* nickname) {
     enemyNickname = std::string(nickname);
+}
+}
+
+// Callback quando il nemico spara (calcola il danno lato client)
+extern "C" {
+EMSCRIPTEN_KEEPALIVE
+void OnEnemyShot(float damage, const char* shooterNickname) {
+    playerHP -= damage;
+    std::cout << "Sono stato HITTATO! Danno ricevuto: " << damage << " HP rimanenti: " << playerHP << std::endl;
+    
+    // Se il player muore
+    if (playerHP <= 0.0f) {
+        playerHP = 0.0f;
+        b_death_screen = true;
+        playerDeaths++;
+        killedByNickname = std::string(shooterNickname);  // Salva il nome di chi ci ha ucciso
+        std::cout << "Killed by: " << killedByNickname << std::endl;
+    }
 }
 }
 
@@ -437,6 +461,44 @@ void pause_menu_rendering() {
         //Rendering ImGui
             ImGui::Render();  // Chiude il frame ImGui e prepara i dati di disegno
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());  
+}
+
+void death_screen_rendering() {
+    ImGuiWindowFlags window_flags = 
+        ImGuiWindowFlags_NoDecoration | 
+        ImGuiWindowFlags_NoMove | 
+        ImGuiWindowFlags_NoSavedSettings | 
+        ImGuiWindowFlags_NoInputs |
+        ImGuiWindowFlags_NoBackground;
+
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    // Schermata di morte a schermo pieno semi-trasparente
+    ImGui::SetNextWindowPos(ImVec2(0, 0));
+    ImGui::SetNextWindowSize(ImVec2(winWidth, winHeight));
+    ImGui::SetNextWindowBgAlpha(0.7f);  // Sfondo scuro semitrasparente
+    
+    ImGui::Begin("DeathScreen", NULL, window_flags);
+    
+    // Testo centrato "YOU DIED"
+    const char* deathText = "YOU DIED";
+    ImVec2 deathTextSize = ImGui::CalcTextSize(deathText);
+    ImGui::SetCursorPosX((winWidth - deathTextSize.x) * 0.5f);
+    ImGui::SetCursorPosY(winHeight * 0.35f);
+    ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "%s", deathText);  // Rosso
+    
+    // "Killed by [Nickname]"
+    std::string killedByText = "Killed by " + killedByNickname;
+    ImVec2 killedBySize = ImGui::CalcTextSize(killedByText.c_str());
+    ImGui::SetCursorPosX((winWidth - killedBySize.x) * 0.5f);
+    ImGui::SetCursorPosY(winHeight * 0.45f);
+    ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.8f), "%s", killedByText.c_str());
+    
+    ImGui::End();
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
 
