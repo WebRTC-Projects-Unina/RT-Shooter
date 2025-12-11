@@ -153,24 +153,10 @@ void imgui_style_setup(){
 
 
 void debug_menu_rendering(glm::vec3 playerPos, glm::vec3 enemyPosition) {
-            //Inizia il frame ImGui
+
         ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize;
 
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-        //ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-        //ImGui::SetNextWindowPos(center, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-        //ImDrawList* draw_list = ImGui::GetWindowDrawList();
-        //Disegna la GUI con ImGui
         ImGui::Begin("Debug Menu", NULL, window_flags);
-            
-        
-        //draw_list->AddLine(ImVec2(center.x, center.y-25), ImVec2(center.x, center.y+5), col, th);                          
-        //draw_list->AddLine(ImVec2(center.x-5, center.y), ImVec2(center.x+5, center.y), col, th);
-        
-        
-
         ImGui::InputFloat3("Posizione", (float*)&playerPos);
         ImGui::InputFloat3("Enemy Pos", (float*)&enemyPosition);
 
@@ -178,404 +164,104 @@ void debug_menu_rendering(glm::vec3 playerPos, glm::vec3 enemyPosition) {
             
 
         ImGui::End();
-
-        
-        //Rendering ImGui
-            ImGui::Render();  // Chiude il frame ImGui e prepara i dati di disegno
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());  
 }
 
 
 void crosshair_rendering() {
-    ImGuiWindowFlags window_flags = 
-        ImGuiWindowFlags_NoDecoration | 
-        ImGuiWindowFlags_NoMove | 
-        ImGuiWindowFlags_NoSavedSettings | 
-        ImGuiWindowFlags_NoBackground |
-        ImGuiWindowFlags_NoInputs;
+     // ===== CROSSHAIR =====
+    if (!b_pause_menu_rendering && !b_chat_rendering) {
+        ImGuiWindowFlags window_flags = 
+            ImGuiWindowFlags_NoDecoration | 
+            ImGuiWindowFlags_NoMove | 
+            ImGuiWindowFlags_NoSavedSettings | 
+            ImGuiWindowFlags_NoBackground |
+            ImGuiWindowFlags_NoInputs;
 
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
+        ImGui::SetNextWindowPos(ImVec2(0, 0));
+        ImGui::SetNextWindowSize(ImVec2(winWidth, winHeight));
+        ImGui::Begin("Crosshair", NULL, window_flags);
+        
+        ImDrawList* draw_list = ImGui::GetWindowDrawList();
+        ImVec2 center = ImVec2(winWidth * 0.5f, winHeight * 0.5f);
+        
+        ImU32 col_white = IM_COL32(255, 255, 255, 255);
+        float thickness = 1.5f;
+        float inner_line_length = 10.0f;
+        float inner_line_offset = 0.0f;  // Parte dal centro
+        
+        draw_list->AddLine(ImVec2(center.x, center.y - inner_line_offset - inner_line_length),
+                          ImVec2(center.x, center.y - inner_line_offset), col_white, thickness);
+        draw_list->AddLine(ImVec2(center.x, center.y + inner_line_offset),
+                          ImVec2(center.x, center.y + inner_line_offset + inner_line_length), col_white, thickness);
+        draw_list->AddLine(ImVec2(center.x - inner_line_offset - inner_line_length, center.y),
+                          ImVec2(center.x - inner_line_offset, center.y), col_white, thickness);
+        draw_list->AddLine(ImVec2(center.x + inner_line_offset, center.y),
+                          ImVec2(center.x + inner_line_offset + inner_line_length, center.y), col_white, thickness);
+        
+        draw_list->AddCircleFilled(center, 0.5f, col_white, 4);
 
-    float centerX = winWidth / 2.0f;
-    float centerY = winHeight / 2.0f;
-    
-    ImGui::SetNextWindowPos(ImVec2(centerX - 30, centerY - 30));
-    ImGui::SetNextWindowSize(ImVec2(60, 60));
-    
-    ImGui::Begin("Crosshair", NULL, window_flags);
-    
-    ImDrawList* draw_list = ImGui::GetWindowDrawList();
-    ImVec2 center(centerX, centerY);
-    
-    ImU32 col_white = ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-    
-    // Parametri dal codice Valorant decodificato
-    float inner_line_length = 10.0f;   // l;4 
-    float inner_line_offset = 0.0f;   // o;0 (inizia dal centro)
-    float thickness = 1.5f;            // b;0 (boldness minima, ma visibile)
-    
-    // Linea verticale (top)
-    draw_list->AddLine(ImVec2(center.x, center.y - inner_line_offset - inner_line_length),
-                       ImVec2(center.x, center.y - inner_line_offset), col_white, thickness);
-    // Linea verticale (bottom)
-    draw_list->AddLine(ImVec2(center.x, center.y + inner_line_offset),
-                       ImVec2(center.x, center.y + inner_line_offset + inner_line_length), col_white, thickness);
-    // Linea orizzontale (left)
-    draw_list->AddLine(ImVec2(center.x - inner_line_offset - inner_line_length, center.y),
-                       ImVec2(center.x - inner_line_offset, center.y), col_white, thickness);
-    // Linea orizzontale (right)
-    draw_list->AddLine(ImVec2(center.x + inner_line_offset, center.y),
-                       ImVec2(center.x + inner_line_offset + inner_line_length, center.y), col_white, thickness);
-    
-    // Punto centrale piccolo
-    draw_list->AddCircleFilled(center, 0.5f, col_white, 4);
-
-    ImGui::End();
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        ImGui::End();
+    }
 }
 
 void health_bar_rendering() {
-    ImGuiWindowFlags window_flags = 
-        ImGuiWindowFlags_NoDecoration | 
-        ImGuiWindowFlags_NoMove | 
-        ImGuiWindowFlags_NoSavedSettings | 
-        ImGuiWindowFlags_NoBackground |
-        ImGuiWindowFlags_NoInputs;
+    // ===== HEALTH BAR =====
+    if (!b_pause_menu_rendering) {
+        ImGuiWindowFlags window_flags = 
+            ImGuiWindowFlags_NoDecoration | 
+            ImGuiWindowFlags_NoMove | 
+            ImGuiWindowFlags_NoSavedSettings | 
+            ImGuiWindowFlags_NoBackground |
+            ImGuiWindowFlags_NoInputs;
 
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-
-    ImGui::SetNextWindowPos(ImVec2(0, 0));
-    ImGui::SetNextWindowSize(ImVec2(winWidth, winHeight));
-    ImGui::Begin("HealthBar", NULL, window_flags);
-    
-    ImDrawList* draw_list = ImGui::GetWindowDrawList();
-    
-    // Dimensioni e posizione della barra HP
-    float barWidth = 300.0f;
-    float barHeight = 25.0f;
-    float barX = (winWidth - barWidth) * 0.5f;  // Centrata orizzontalmente
-    float barY = winHeight - 60.0f;  // 60px dal basso
-    
-    // Background della barra (nero semi-trasparente)
-    ImU32 col_bg = IM_COL32(0, 0, 0, 150);
-    draw_list->AddRectFilled(ImVec2(barX, barY), ImVec2(barX + barWidth, barY + barHeight), col_bg, 3.0f);
-    
-    // Calcola la larghezza della barra in base agli HP
-    float hpPercent = playerHP / 100.0f;
-    if (hpPercent < 0.0f) hpPercent = 0.0f;
-    if (hpPercent > 1.0f) hpPercent = 1.0f;
-    
-    float fillWidth = barWidth * hpPercent;
-    
-    // Colore della barra: verde -> giallo -> rosso in base agli HP
-    ImU32 col_hp;
-    if (hpPercent > 0.5f) {
-        // Verde -> Giallo (HP alto)
-        float t = (hpPercent - 0.5f) * 2.0f;  // 0 a 1
-        col_hp = IM_COL32(255 * (1.0f - t), 255, 0, 255);
-    } else {
-        // Giallo -> Rosso (HP basso)
-        float t = hpPercent * 2.0f;  // 0 a 1
-        col_hp = IM_COL32(255, 255 * t, 0, 255);
-    }
-    
-    // Disegna la barra HP (verde/giallo/rosso)
-    if (fillWidth > 0) {
-        draw_list->AddRectFilled(ImVec2(barX, barY), ImVec2(barX + fillWidth, barY + barHeight), col_hp, 3.0f);
-    }
-    
-    // Bordo bianco della barra
-    ImU32 col_border = IM_COL32(255, 255, 255, 255);
-    draw_list->AddRect(ImVec2(barX, barY), ImVec2(barX + barWidth, barY + barHeight), col_border, 3.0f, 0, 2.0f);
-    
-    // Testo HP al centro della barra
-    char hpText[32];
-    sprintf(hpText, "%.0f / 100", playerHP);
-    ImVec2 textSize = ImGui::CalcTextSize(hpText);
-    ImVec2 textPos = ImVec2(barX + (barWidth - textSize.x) * 0.5f, barY + (barHeight - textSize.y) * 0.5f);
-    draw_list->AddText(textPos, IM_COL32(255, 255, 255, 255), hpText);
-
-    ImGui::End();
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-}
-
-
-void chat_rendering(bool isActive) {
-    ImGuiWindowFlags window_flags = 
-        ImGuiWindowFlags_NoDecoration | 
-        ImGuiWindowFlags_NoMove | 
-        ImGuiWindowFlags_NoSavedSettings | 
-        ImGuiWindowFlags_NoCollapse;
-    
-    // Se la chat non è attiva, disabilita l'input
-    if (!isActive) {
-        window_flags |= ImGuiWindowFlags_NoInputs;
-    }
-
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-
-    // Posiziona la chat in basso a sinistra
-    float chatWidth = 400.0f;
-    float chatHeight = 300.0f;
-    float margin = 20.0f;
-    
-    ImGui::SetNextWindowPos(ImVec2(margin, winHeight - chatHeight - margin));
-    ImGui::SetNextWindowSize(ImVec2(chatWidth, chatHeight));
-    
-    // Trasparenza dinamica: più trasparente se non attiva
-    float bgAlpha = isActive ? 0.85f : 0.3f;
-    ImGui::SetNextWindowBgAlpha(bgAlpha);
-    
-    ImGui::Begin("Chat", NULL, window_flags);
-    
-    // Area messaggi (scrollabile)
-    float inputHeight = isActive ? -30 : 0;  // Nascondi input se non attiva
-    ImGui::BeginChild("ChatMessages", ImVec2(0, inputHeight), true);
-    
-    // Trasparenza testo: più trasparente se non attiva
-    float textAlpha = isActive ? 1.0f : 0.5f;
-    // Visualizza i messaggi
-    for (const auto& msg : chatMessages) {
-        if (msg.isMine) {
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 1.0f, 0.4f, textAlpha)); // Verde
-            ImGui::Text("[%s]: %s", playerNickname.c_str(), msg.text.c_str());
-        } else {
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.4f, 0.4f, textAlpha)); // Rosso
-            ImGui::Text("%s", msg.text.c_str());
-        }
-        ImGui::PopStyleColor();
-    }
-    
-    // Auto-scroll verso il basso quando arrivano nuovi messaggi
-    if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
-        ImGui::SetScrollHereY(1.0f);
-    
-    ImGui::EndChild();
-    
-    // Input box visibile SOLO se la chat è attiva
-    if (isActive) {
-        ImGui::Separator();
-        
-        // Focus automatico quando la chat diventa attiva
-        if (!chatInputFocused) {
-            ImGui::SetKeyboardFocusHere();
-            chatInputFocused = true;
-        }
-        
-        // Input text con callback per Invio
-        if (ImGui::InputText("##ChatInput", chatInputBuffer, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
-            // Messaggio inviato quando premi Invio
-            if (strlen(chatInputBuffer) > 0) {
-                // Aggiungi il messaggio alla lista locale
-                ChatMessage myMsg;
-                myMsg.text = std::string(chatInputBuffer);
-                myMsg.isMine = true;
-                myMsg.timestamp = glfwGetTime();
-                chatMessages.push_back(myMsg);
-                
-                // Invia il messaggio al server tramite socket
-                sendChatMessage(chatInputBuffer);
-            }
-            
-            // Pulisci l'input e chiudi la chat (Invio sempre chiude)
-            memset(chatInputBuffer, 0, sizeof(chatInputBuffer));
-            b_chat_rendering = false;
-            chatInputFocused = false;
-        }
-    } else {
-        // Se la chat viene chiusa (non attiva), resetta lo stato
-        if (chatInputFocused) {
-            chatInputFocused = false;
-            memset(chatInputBuffer, 0, sizeof(chatInputBuffer));
-        }
-    }
-    
-    ImGui::End();
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-}
-
-
-void scoreboard_rendering() {
-    ImGuiWindowFlags window_flags = 
-        ImGuiWindowFlags_NoDecoration | 
-        ImGuiWindowFlags_NoMove | 
-        ImGuiWindowFlags_NoSavedSettings | 
-        ImGuiWindowFlags_NoInputs |  // Non blocca input di gioco
-        ImGuiWindowFlags_NoBackground;
-
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-
-    // Dimensioni scoreboard
-    float boardWidth = 500.0f;
-    float boardHeight = 200.0f;
-    
-    // Centra lo scoreboard
-    ImVec2 center = ImVec2(winWidth * 0.5f, winHeight * 0.5f);
-    ImGui::SetNextWindowPos(ImVec2(center.x - boardWidth * 0.5f, center.y - boardHeight * 0.5f));
-    ImGui::SetNextWindowSize(ImVec2(boardWidth, boardHeight));
-    ImGui::SetNextWindowBgAlpha(0.9f);  // Sfondo semi-trasparente
-    
-    ImGui::Begin("Scoreboard", NULL, window_flags);
-    
-    // Titolo centrato
-    ImGui::SetCursorPosX((boardWidth - ImGui::CalcTextSize("SCOREBOARD").x) * 0.5f);
-    ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "SCOREBOARD");
-    ImGui::Separator();
-    ImGui::Spacing();
-    
-    // Prepara i dati per la tabella (ordina per kills)
-    struct PlayerStats {
-        std::string nickname;
-        int kills;
-        int deaths;
-        bool isMe;
-    };
-    
-    std::vector<PlayerStats> players;
-    players.push_back({playerNickname.empty() ? "You" : playerNickname, playerKills, playerDeaths, true});
-    if (!enemyNickname.empty()) {
-        players.push_back({enemyNickname, enemyKills, enemyDeaths, false});
-    }
-    
-    // Ordina per kills (decrescente)
-    std::sort(players.begin(), players.end(), [](const PlayerStats& a, const PlayerStats& b) {
-        return a.kills > b.kills;
-    });
-    
-    // Tabella con 3 colonne: Nickname | Kills | Deaths
-    if (ImGui::BeginTable("ScoreTable", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
-        // Header
-        ImGui::TableSetupColumn("Nickname", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoHide);
-        ImGui::TableSetupColumn("Kills", ImGuiTableColumnFlags_WidthFixed, 80.0f);
-        ImGui::TableSetupColumn("Deaths", ImGuiTableColumnFlags_WidthFixed, 80.0f);
-        ImGui::TableHeadersRow();
-        
-        // Righe dei player
-        for (const auto& player : players) {
-            ImGui::TableNextRow();
-            
-            // Colore verde per te, rosso per nemico
-            ImVec4 color = player.isMe ? ImVec4(0.4f, 1.0f, 0.4f, 1.0f) : ImVec4(1.0f, 0.4f, 0.4f, 1.0f);
-            
-            ImGui::TableSetColumnIndex(0);
-            ImGui::TextColored(color, "%s", player.nickname.c_str());
-            
-            ImGui::TableSetColumnIndex(1);
-            ImGui::TextColored(color, "%d", player.kills);
-            
-            ImGui::TableSetColumnIndex(2);
-            ImGui::TextColored(color, "%d", player.deaths);
-        }
-        
-        ImGui::EndTable();
-    }
-    
-    ImGui::End();
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-}
-
-
-void pause_menu_rendering() {
-                    //Inizia il frame ImGui
-        ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;
-
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-        
         ImGui::SetNextWindowPos(ImVec2(0, 0));
         ImGui::SetNextWindowSize(ImVec2(winWidth, winHeight));
-       
-        ImGui::Begin("Pause Menu",  NULL, window_flags);
+        ImGui::Begin("HealthBar", NULL, window_flags);
         
- ImVec2 menuDim = ImGui::GetContentRegionAvail();
+        ImDrawList* draw_list = ImGui::GetWindowDrawList();
+        
+        float barWidth = 300.0f;
+        float barHeight = 25.0f;
+        float barX = (winWidth - barWidth) * 0.5f;
+        float barY = winHeight - 60.0f;
+        
+        ImU32 col_bg = IM_COL32(0, 0, 0, 150);
+        draw_list->AddRectFilled(ImVec2(barX, barY), ImVec2(barX + barWidth, barY + barHeight), col_bg, 3.0f);
+        
+        float hpPercent = playerHP / 100.0f;
+        if (hpPercent < 0.0f) hpPercent = 0.0f;
+        if (hpPercent > 1.0f) hpPercent = 1.0f;
+        
+        float fillWidth = barWidth * hpPercent;
+        
+        ImU32 col_hp;
+        if (hpPercent > 0.5f) {
+            float t = (hpPercent - 0.5f) * 2.0f;
+            col_hp = IM_COL32(255 * (1.0f - t), 255, 0, 255);
+        } else {
+            float t = hpPercent * 2.0f;
+            col_hp = IM_COL32(255, 255 * t, 0, 255);
+        }
+        
+        if (fillWidth > 0) {
+            draw_list->AddRectFilled(ImVec2(barX, barY), ImVec2(barX + fillWidth, barY + barHeight), col_hp, 3.0f);
+        }
+        
+        ImU32 col_border = IM_COL32(255, 255, 255, 255);
+        draw_list->AddRect(ImVec2(barX, barY), ImVec2(barX + barWidth, barY + barHeight), col_border, 3.0f, 0, 2.0f);
+        
+        char hpText[32];
+        sprintf(hpText, "%.0f / 100", playerHP);
+        ImVec2 textSize = ImGui::CalcTextSize(hpText);
+        ImVec2 textPos = ImVec2(barX + (barWidth - textSize.x) * 0.5f, barY + (barHeight - textSize.y) * 0.5f);
+        draw_list->AddText(textPos, IM_COL32(255, 255, 255, 255), hpText);
 
-            float buttonWidth  = menuDim.x * 0.25f;  
-            float buttonHeight = menuDim.x * 0.0625f; 
-
-
-            float offsetX = (menuDim.x - buttonWidth) * 0.5f;
-            float offsetY = (menuDim.y - buttonHeight) * 0.5f;
-            
-
-            ImGui::SetCursorPosX(offsetX);
-            ImGui::SetCursorPosY(offsetY - buttonHeight/2 );
-
-            if (b_pause_menu_rendering && ImGui::Button("Riprendi Partita", ImVec2(buttonWidth, buttonHeight))){
-                emscripten_request_pointerlock("#canvas", true);
-                b_pause_menu_rendering = false;
-            }
-            ImGui::SetCursorPosX(offsetX);
-            ImGui::SetCursorPosY(offsetY + buttonHeight);
-
-             if (ImGui::Button("Ritorna alla selezione delle Stanze", ImVec2(buttonWidth, buttonHeight))){
-                exitGame();
-            }
-            
         ImGui::End();
-        
-        //Rendering ImGui
-            ImGui::Render();  // Chiude il frame ImGui e prepara i dati di disegno
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());  
+    }
 }
 
-void death_screen_rendering() {
-    ImGuiWindowFlags window_flags = 
-        ImGuiWindowFlags_NoDecoration | 
-        ImGuiWindowFlags_NoMove | 
-        ImGuiWindowFlags_NoSavedSettings | 
-        ImGuiWindowFlags_NoInputs |
-        ImGuiWindowFlags_NoBackground;
 
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-
-    // Schermata di morte a schermo pieno semi-trasparente
-    ImGui::SetNextWindowPos(ImVec2(0, 0));
-    ImGui::SetNextWindowSize(ImVec2(winWidth, winHeight));
-    ImGui::SetNextWindowBgAlpha(0.7f);  // Sfondo scuro semitrasparente
-    
-    ImGui::Begin("DeathScreen", NULL, window_flags);
-    
-    // Testo centrato "YOU DIED"
-    const char* deathText = "YOU DIED";
-    ImVec2 deathTextSize = ImGui::CalcTextSize(deathText);
-    ImGui::SetCursorPosX((winWidth - deathTextSize.x) * 0.5f);
-    ImGui::SetCursorPosY(winHeight * 0.35f);
-    ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "%s", deathText);  // Rosso
-    
-    // "Killed by [Nickname]"
-    std::string killedByText = "Killed by " + killedByNickname;
-    ImVec2 killedBySize = ImGui::CalcTextSize(killedByText.c_str());
-    ImGui::SetCursorPosX((winWidth - killedBySize.x) * 0.5f);
-    ImGui::SetCursorPosY(winHeight * 0.45f);
-    ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.8f), "%s", killedByText.c_str());
-    
-    ImGui::End();
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-}
-
-// FUNZIONE UNIFICATA per tutto l'UI ImGui
-void render_all_ui() {
-    // Inizia il frame ImGui UNA SOLA VOLTA
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-    
+void chat_rendering() {
     // ===== CHAT =====
     {
         ImGuiWindowFlags window_flags = 
@@ -645,95 +331,10 @@ void render_all_ui() {
         
         ImGui::End();
     }
-    
-    // ===== HEALTH BAR =====
-    if (!b_pause_menu_rendering) {
-        ImGuiWindowFlags window_flags = 
-            ImGuiWindowFlags_NoDecoration | 
-            ImGuiWindowFlags_NoMove | 
-            ImGuiWindowFlags_NoSavedSettings | 
-            ImGuiWindowFlags_NoBackground |
-            ImGuiWindowFlags_NoInputs;
+}
 
-        ImGui::SetNextWindowPos(ImVec2(0, 0));
-        ImGui::SetNextWindowSize(ImVec2(winWidth, winHeight));
-        ImGui::Begin("HealthBar", NULL, window_flags);
-        
-        ImDrawList* draw_list = ImGui::GetWindowDrawList();
-        
-        float barWidth = 300.0f;
-        float barHeight = 25.0f;
-        float barX = (winWidth - barWidth) * 0.5f;
-        float barY = winHeight - 60.0f;
-        
-        ImU32 col_bg = IM_COL32(0, 0, 0, 150);
-        draw_list->AddRectFilled(ImVec2(barX, barY), ImVec2(barX + barWidth, barY + barHeight), col_bg, 3.0f);
-        
-        float hpPercent = playerHP / 100.0f;
-        if (hpPercent < 0.0f) hpPercent = 0.0f;
-        if (hpPercent > 1.0f) hpPercent = 1.0f;
-        
-        float fillWidth = barWidth * hpPercent;
-        
-        ImU32 col_hp;
-        if (hpPercent > 0.5f) {
-            float t = (hpPercent - 0.5f) * 2.0f;
-            col_hp = IM_COL32(255 * (1.0f - t), 255, 0, 255);
-        } else {
-            float t = hpPercent * 2.0f;
-            col_hp = IM_COL32(255, 255 * t, 0, 255);
-        }
-        
-        if (fillWidth > 0) {
-            draw_list->AddRectFilled(ImVec2(barX, barY), ImVec2(barX + fillWidth, barY + barHeight), col_hp, 3.0f);
-        }
-        
-        ImU32 col_border = IM_COL32(255, 255, 255, 255);
-        draw_list->AddRect(ImVec2(barX, barY), ImVec2(barX + barWidth, barY + barHeight), col_border, 3.0f, 0, 2.0f);
-        
-        char hpText[32];
-        sprintf(hpText, "%.0f / 100", playerHP);
-        ImVec2 textSize = ImGui::CalcTextSize(hpText);
-        ImVec2 textPos = ImVec2(barX + (barWidth - textSize.x) * 0.5f, barY + (barHeight - textSize.y) * 0.5f);
-        draw_list->AddText(textPos, IM_COL32(255, 255, 255, 255), hpText);
 
-        ImGui::End();
-    }
-    
-    // ===== CROSSHAIR =====
-    if (!b_pause_menu_rendering && !b_chat_rendering) {
-        ImGuiWindowFlags window_flags = 
-            ImGuiWindowFlags_NoDecoration | 
-            ImGuiWindowFlags_NoMove | 
-            ImGuiWindowFlags_NoSavedSettings | 
-            ImGuiWindowFlags_NoBackground |
-            ImGuiWindowFlags_NoInputs;
-
-        ImGui::SetNextWindowPos(ImVec2(0, 0));
-        ImGui::SetNextWindowSize(ImVec2(winWidth, winHeight));
-        ImGui::Begin("Crosshair", NULL, window_flags);
-        
-        ImDrawList* draw_list = ImGui::GetWindowDrawList();
-        ImVec2 center = ImVec2(winWidth * 0.5f, winHeight * 0.5f);
-        
-        ImU32 col_white = IM_COL32(255, 255, 255, 255);
-        float thickness = 1.5f;
-        float inner_line_length = 10.0f;
-        float inner_line_offset = 0.0f;  // Parte dal centro
-        
-        draw_list->AddLine(ImVec2(center.x, center.y - inner_line_offset - inner_line_length),
-                          ImVec2(center.x, center.y - inner_line_offset), col_white, thickness);
-        draw_list->AddLine(ImVec2(center.x, center.y + inner_line_offset),
-                          ImVec2(center.x, center.y + inner_line_offset + inner_line_length), col_white, thickness);
-        draw_list->AddLine(ImVec2(center.x - inner_line_offset - inner_line_length, center.y),
-                          ImVec2(center.x - inner_line_offset, center.y), col_white, thickness);
-        draw_list->AddLine(ImVec2(center.x + inner_line_offset, center.y),
-                          ImVec2(center.x + inner_line_offset + inner_line_length, center.y), col_white, thickness);
-        
-        draw_list->AddCircleFilled(center, 0.5f, col_white, 4);
-
-        ImGui::End();
-    }
+void scoreboard_rendering() {
     
     // ===== SCOREBOARD =====
     if (b_scoreboard_rendering) {
@@ -802,6 +403,99 @@ void render_all_ui() {
         
         ImGui::End();
     }
+}
+
+
+void pause_menu_rendering() {
+                    //Inizia il frame ImGui
+        ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;
+        
+        ImGui::SetNextWindowPos(ImVec2(0, 0));
+        ImGui::SetNextWindowSize(ImVec2(winWidth, winHeight));
+       
+        ImGui::Begin("Pause Menu",  NULL, window_flags);
+        
+ ImVec2 menuDim = ImGui::GetContentRegionAvail();
+
+            float buttonWidth  = menuDim.x * 0.25f;  
+            float buttonHeight = menuDim.x * 0.0625f; 
+
+
+            float offsetX = (menuDim.x - buttonWidth) * 0.5f;
+            float offsetY = (menuDim.y - buttonHeight) * 0.5f;
+            
+
+            ImGui::SetCursorPosX(offsetX);
+            ImGui::SetCursorPosY(offsetY - buttonHeight/2 );
+
+            if (b_pause_menu_rendering && ImGui::Button("Riprendi Partita", ImVec2(buttonWidth, buttonHeight))){
+                emscripten_request_pointerlock("#canvas", true);
+                b_pause_menu_rendering = false;
+            }
+            ImGui::SetCursorPosX(offsetX);
+            ImGui::SetCursorPosY(offsetY + buttonHeight);
+
+             if (ImGui::Button("Ritorna alla selezione delle Stanze", ImVec2(buttonWidth, buttonHeight))){
+                exitGame();
+            }
+            
+        ImGui::End();
+}
+
+void death_screen_rendering() {
+    ImGuiWindowFlags window_flags = 
+        ImGuiWindowFlags_NoDecoration | 
+        ImGuiWindowFlags_NoMove | 
+        ImGuiWindowFlags_NoSavedSettings | 
+        ImGuiWindowFlags_NoInputs |
+        ImGuiWindowFlags_NoBackground;
+
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    // Schermata di morte a schermo pieno semi-trasparente
+    ImGui::SetNextWindowPos(ImVec2(0, 0));
+    ImGui::SetNextWindowSize(ImVec2(winWidth, winHeight));
+    ImGui::SetNextWindowBgAlpha(0.7f);  // Sfondo scuro semitrasparente
+    
+    ImGui::Begin("DeathScreen", NULL, window_flags);
+    
+    // Testo centrato "YOU DIED"
+    const char* deathText = "YOU DIED";
+    ImVec2 deathTextSize = ImGui::CalcTextSize(deathText);
+    ImGui::SetCursorPosX((winWidth - deathTextSize.x) * 0.5f);
+    ImGui::SetCursorPosY(winHeight * 0.35f);
+    ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "%s", deathText);  // Rosso
+    
+    // "Killed by [Nickname]"
+    std::string killedByText = "Killed by " + killedByNickname;
+    ImVec2 killedBySize = ImGui::CalcTextSize(killedByText.c_str());
+    ImGui::SetCursorPosX((winWidth - killedBySize.x) * 0.5f);
+    ImGui::SetCursorPosY(winHeight * 0.45f);
+    ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.8f), "%s", killedByText.c_str());
+    
+    ImGui::End();
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+// FUNZIONE UNIFICATA per tutto l'UI ImGui
+void render_all_ui() {
+    // Inizia il frame ImGui UNA SOLA VOLTA
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+    
+
+    chat_rendering();
+    crosshair_rendering();
+    health_bar_rendering();
+    scoreboard_rendering();
+    if(b_debug_menu_rendering) debug_menu_rendering(player.getPosition(), enemyPlayer.getPosition());
+    if(b_pause_menu_rendering) {pause_menu_rendering(); b_debug_menu_rendering = false;}
+   
+    
     
     // Fine del frame ImGui - Render UNA SOLA VOLTA
     ImGui::Render();
