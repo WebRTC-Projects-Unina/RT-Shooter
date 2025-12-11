@@ -18,6 +18,8 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <vector>
+#include <iostream>
 
 
 
@@ -59,6 +61,38 @@ EM_JS(void, RegisterSocketIOCallback, (), {
             null,              // ritorno void
             ["string"],        // tipo argomento
             [json]           
+        );
+    });
+    
+    // Quando il nemico si connette
+    Module.socket.on("enemy_joined", (data) => {
+        Module.ccall(
+            "OnEnemyJoined",
+            null,
+            ["string"],
+            [data.nickname]
+        );
+    });
+    
+    // Gestione messaggi di chat in arrivo
+    Module.socket.on("chat_message_received", (data) => {
+        Module.ccall(
+            "OnChatMessageReceived",
+            null,
+            ["string", "string"],
+            [data.message, data.senderNickname]
+        );
+    });
+    
+    // Quando il nemico spara - calcola il danno lato client
+    Module.socket.on("player_shot", (data) => {
+        const damage = (data.damage !== undefined) ? data.damage : 25;  // Permette 0 danno se miss
+        const shooterNickname = data.shooterNickname || "Unknown";
+        Module.ccall(
+            "OnEnemyShot",
+            null,
+            ["number", "string"],
+            [damage, shooterNickname]
         );
     });
 });
@@ -112,6 +146,19 @@ void sendShootEvent(glm::vec3 position, glm::vec3 direction, float damage, float
     std::string json = ss.str();
     
     sendShootData(json.c_str());
+}
+// Funzioni per la chat
+EM_JS(void, sendChatData, (const char* json), {
+    if(!Module.socket) return;
+    Module.socket.emit("chat_message", JSON.parse(UTF8ToString(json)));
+});
+// Invia un messaggio di chat al server
+void sendChatMessage(const char* message) {
+    std::stringstream ss;
+    ss << "{ \"message\": \"" << message << "\" }";
+    std::string json = ss.str();
+    
+    sendChatData(json.c_str());
 }
 
 EM_JS(int, canvas_get_width, (), {

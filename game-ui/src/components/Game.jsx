@@ -8,6 +8,7 @@ var setupDone = false;
 // creo la socket
 var gameSocket = null;
 var callStarted = false;
+var playerNicknameToSet = "";  // Salva il nickname da passare al C++
 // Configurazione server STUN (necessario per attraversare i NAT/Router)
 const rtcConfig = {
     iceServers: [
@@ -122,15 +123,35 @@ let script = document.createElement("script");
       socket: null,
       RegisterSocketIOCallback: null,
       exitGame: () => {setupDone = true; setScreen("lobby");},
-      onRuntimeInitialized: () => {window.Module.callMain([]); setupDone = true; }
+      onRuntimeInitialized: () => {
+        window.Module.callMain([]); 
+        setupDone = true;
+        // Setta il nickname DOPO che il runtime è pronto
+        if (playerNicknameToSet) {
+          window.Module.ccall('SetPlayerNickname', null, ['string'], [playerNicknameToSet]);
+        }
+        // Registra le callback socket quando il runtime è pronto
+        if (window.Module.RegisterSocketIOCallback) {
+          window.Module.RegisterSocketIOCallback();
+        }
+        // ADESSO che i callback sono registrati, fai join_game
+        gameSocket.emit("join_game", { nickname: playerNicknameToSet });
+        console.log("join_game emitted AFTER callbacks registered");
+      }
     };
 
 
     
     gameSocket.on("connect", () => {
       console.log("Connected to room server:", port);
-        script.src = "/test.js";
-        script.async = true;
+      // Salva il nickname per settarlo quando il runtime è pronto
+      playerNicknameToSet = nickname;
+      
+      // Imposta il socket SUBITO, prima di caricare lo script
+      window.Module.socket = gameSocket;
+      
+      script.src = "/test.js";
+      script.async = true;
       
 
         gameSocket.addEventListener("error", (event) => {
@@ -214,10 +235,8 @@ let script = document.createElement("script");
       gameSocket.on('message', function(e) {
       console.log('Got nsg! ', e);  });
 
-      gameSocket.emit("join_game", { nickname });
-      window.Module.socket = gameSocket;
-
- 
+      // Il socket è già stato impostato sopra, prima di caricare lo script
+      // join_game verrà fatto in onRuntimeInitialized
       if (window.Module.RegisterSocketIOCallback) {
         window.Module.RegisterSocketIOCallback();
       }
@@ -228,8 +247,7 @@ let script = document.createElement("script");
 
     script.onload = () => {
       console.log("WASM caricato");
-
-      
+      // Se sia il socket sia la callback sono pronti, registrala
       if (window.Module.socket && window.Module.RegisterSocketIOCallback) {
         window.Module.RegisterSocketIOCallback();
       }

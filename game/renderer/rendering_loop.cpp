@@ -52,11 +52,16 @@ void shoot_raycast();
 ClientPlayer player(glm::vec3(3.0f, 3.0f, 3.0f), glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, -1.0f));
 int b_lastPressed_KEY_APOSTROPHE = 0;
 int b_lastPressed_KEY_M = 0;
+int b_lastPressed_KEY_T = 0;
 int b_lastPressed_MOUSE_LEFT = 0;
 
 // Variabili per il sistema di sparo
 float lastShootTime = 0.0f;
 float shootCooldown = 0.2f;  // 200ms tra uno sparo e l'altro (5 spari/sec)
+
+// Variabili per respawn
+float deathTime = 0.0f;
+float respawnDelay = 5.0f;  // 5 secondi prima del respawn
 
 // Questa funzione verrà chiamata direttamente da JS
 
@@ -417,8 +422,30 @@ glfwSetWindowSize(window, winWidth, winHeight);
         if(b_debug_menu_rendering) debug_menu_rendering(player.getPosition(), enemyPlayer.getPosition());
         if(b_pause_menu_rendering) {pause_menu_rendering(); b_debug_menu_rendering = false;}
         
-        // Renderizza il mirino sempre visibile in gioco (non durante la pausa)
-        if(!b_pause_menu_rendering) crosshair_rendering();
+        // Logica di respawn - se il player è morto
+        if(b_death_screen) {
+            if(deathTime == 0.0f) {
+                deathTime = glfwGetTime();  // Registra il momento della morte
+            }
+            
+            float timeSinceDeath = glfwGetTime() - deathTime;
+            
+            // Renderizza la schermata di morte
+            death_screen_rendering();
+            
+            // Se sono passati 5 secondi, respawna
+            if(timeSinceDeath >= respawnDelay) {
+                playerHP = 100.0f;
+                b_death_screen = false;
+                deathTime = 0.0f;
+                killedByNickname = "";
+                std::cout << "Respawned! HP: " << playerHP << std::endl;
+            }
+            return;  // Non renderizzare il resto della scena durante la morte
+        }
+        
+        // Renderizza TUTTA l'UI in un unico frame ImGui
+        render_all_ui();
 
 
 
@@ -471,7 +498,7 @@ void textureLoad(unsigned int* texture, const char* path)
 void processInput(GLFWwindow *window)
 {
     
-    if(b_pause_menu_rendering == false){
+    if(b_pause_menu_rendering == false && b_chat_rendering == false && b_death_screen == false){
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
             player.processMovement(FORWARD, frameDeltaTime);
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -522,6 +549,27 @@ void processInput(GLFWwindow *window)
 
     }
 
+    // Tasto T per aprire/chiudere la chat (blocca il tasto se la chat è già attiva)
+    if(glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS && !b_chat_rendering) {
+        b_lastPressed_KEY_T = GLFW_PRESS;
+    }
+    if (b_lastPressed_KEY_T == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_T) != GLFW_PRESS)
+    {
+        b_lastPressed_KEY_T = 0;
+        b_chat_rendering = !b_chat_rendering;
+        
+        // Reset del focus quando apri la chat per garantire autofocus
+        if (b_chat_rendering) {
+            chatInputFocused = false;
+        }
+    }
+
+    // Tasto TAB per mostrare lo scoreboard (hold to show)
+    if(glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS) {
+        b_scoreboard_rendering = true;
+    } else {
+        b_scoreboard_rendering = false;
+    }
 
     if ( glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS){
         emscripten_request_pointerlock("#canvas", true);
@@ -565,71 +613,70 @@ void shoot_raycast() {
     // 1. Ottieni la posizione e direzione dalla camera del giocatore
     glm::vec3 shooterPos = player.camera.Position;
     glm::vec3 shootDirection = player.camera.Front;  // Front è la direzione in cui guarda la camera
-    Collider* colliders[2];
-
-    colliders[1] = &enemyPlayer.headHitBox;
-    colliders[0] = &enemyPlayer.bodyHitBox;
-
-    if(glm::distance(shooterPos, enemyPlayer.headHitBox.m_position) <=
-       glm::distance(shooterPos, enemyPlayer.bodyHitBox.m_position))
-    {   
-        colliders[0] = &enemyPlayer.headHitBox;
-        colliders[1] = &enemyPlayer.bodyHitBox;
-    }
-
-    for(int colliderIndex = 0; colliderIndex < 2; colliderIndex++)
-    { 
-        // 3. Ray-AABB intersection (algoritmo di Slabs)
-        float tMin = 0.0f;
-        float tMax = 100.0f;  // Distanza massima del raycast
-
-        glm::vec3 boxMin = colliders[colliderIndex]->getBoxMin();
-        glm::vec3 boxMax = colliders[colliderIndex]->getBoxMax(); 
-        for (int i = 0; i < 3; i++) {  // Per ogni asse (x, y, z)
-            if (abs(shootDirection[i]) < 0.0001f) {
-                // Raggio parallelo all'asse - controlla se è fuori dalla slab
-                if (shooterPos[i] < boxMin[i] || shooterPos[i] > boxMax[i]) {
-                    // Non c'è intersezione
-                    tMax = -1.0f;
-                    break;
-                }
-            } else {
-                // Calcola intersezioni con i piani della slab
-                float t1 = (boxMin[i] - shooterPos[i]) / shootDirection[i];
-                float t2 = (boxMax[i] - shooterPos[i]) / shootDirection[i];
-                
-                if (t1 > t2) std::swap(t1, t2);  // Assicurati che t1 < t2
-                
-                tMin = std::max(tMin, t1);
-                tMax = std::min(tMax, t2);
-                
-                if (tMin > tMax) break;  // Nessuna intersezione
+    
+    // 2. Definisci la hitbox del nemico (AABB - Axis Aligned Bounding Box)
+    glm::vec3 enemyCenter = glm::vec3(enemyPosition.x, enemyPosition.y + 0.1f, enemyPosition.z);
+    glm::vec3 hitboxSize = glm::vec3(0.1f, 0.2f, 0.1f);  // Larghezza x Altezza x Profondità della hitbox
+    
+    // Calcola min e max della hitbox
+    glm::vec3 boxMin = enemyCenter - hitboxSize * 0.5f;
+    glm::vec3 boxMax = enemyCenter + hitboxSize * 0.5f;
+    
+    // 3. Ray-AABB intersection (algoritmo di Slabs)
+    float tMin = 0.0f;
+    float tMax = 100.0f;  // Distanza massima del raycast
+    
+    for (int i = 0; i < 3; i++) {  // Per ogni asse (x, y, z)
+        if (abs(shootDirection[i]) < 0.0001f) {
+            // Raggio parallelo all'asse - controlla se è fuori dalla slab
+            if (shooterPos[i] < boxMin[i] || shooterPos[i] > boxMax[i]) {
+                // Non c'è intersezione
+                tMax = -1.0f;
+                break;
             }
-        }
-        
-        // 4. Verifica se c'è stata un'intersezione valida
-        bool isHit = (tMin <= tMax) && (tMax >= 0.0f) && (tMin <= 100.0f);
-        
-        if (isHit) {
-
-  
-            
-            // 6. Calcola il danno base
-            float damage = colliders[colliderIndex]->m_type == 0 ? 100 : 40;
-            
-
-            
-            // 7. Invia l'evento di sparo al server con i dati
-           // sendShootEvent(shooterPos, shootDirection, damage, hitDistance);
-            
-            damage < 100 ?  std::cout << "bodyhit! Damage: " << damage << std::endl 
-                         :  std::cout << "HEADSHOT! Damage: " << damage << std::endl;
-            colliderIndex = 2; // cosí esco del for
         } else {
-            //sendShootEvent(shooterPos, shootDirection, 0.0f, 0.0f);
+            // Calcola intersezioni con i piani della slab
+            float t1 = (boxMin[i] - shooterPos[i]) / shootDirection[i];
+            float t2 = (boxMax[i] - shooterPos[i]) / shootDirection[i];
             
-            std::cout << colliders[colliderIndex]->m_type <<", MISS! Ray didn't intersect enemy hitbox, pos: " << colliders[colliderIndex]->getBoxMax().x << ", "<< colliders[colliderIndex]->getBoxMax().y << ", "<< colliders[colliderIndex]->getBoxMax().z << " ~ " << colliders[colliderIndex]->getBoxMin().x << ", "<< colliders[colliderIndex]->getBoxMin().y << ", "<< colliders[colliderIndex]->getBoxMin().z << std::endl;
+            if (t1 > t2) std::swap(t1, t2);  // Assicurati che t1 < t2
+            
+            tMin = std::max(tMin, t1);
+            tMax = std::min(tMax, t2);
+            
+            if (tMin > tMax) break;  // Nessuna intersezione
         }
+    }
+    
+    // 4. Verifica se c'è stata un'intersezione valida
+    bool isHit = (tMin <= tMax) && (tMax >= 0.0f) && (tMin <= 100.0f);
+    
+    if (isHit) {
+        // 5. Calcola la distanza del colpo
+        float hitDistance = tMin;
+        glm::vec3 hitPoint = shooterPos + shootDirection * hitDistance;
+        
+        // 6. Calcola il danno base
+        float baseDamage = 25.0f;
+        float damage = baseDamage;
+        
+        // Riduci il danno in base alla distanza
+        if (hitDistance > 30.0f) {
+            damage *= 0.7f;  // 30% di danno in meno se sei lontano
+        }
+        
+        // 7. Invia l'evento di sparo al server con i dati
+        sendShootEvent(shooterPos, shootDirection, damage, hitDistance);
+        
+        std::cout << "HIT! Damage: " << damage << " Distance: " << hitDistance 
+                  << " Point: (" << hitPoint.x << ", " << hitPoint.y << ", " << hitPoint.z << ")" << std::endl;
+    } else {
+        // Sparo mancato - invia comunque al server per validazione (anti-cheat)
+        sendShootEvent(shooterPos, shootDirection, 0.0f, 0.0f);
+        
+        std::cout << "MISS! Ray didn't intersect enemy hitbox" << std::endl;
+    }
+}
 
     }}
 
