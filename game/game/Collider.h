@@ -17,33 +17,14 @@
 class Collider {
 public:
    
- 
 
+    Collider(glm::vec3 position, glm::vec3 scale, int type);
 
-    Collider(glm::vec2 position);
-    Collider(float positionX, float positionY);
-    Collider(glm::vec2 position, glm::vec2 scale);
-    Collider(float positionX, float positionY, glm::vec2 scale);
-    Collider(glm::vec2 position, float scaleX, float scaleY);
-    Collider(glm::vec2 position, float scale);
-
-
-
-
-    static bool areColliding(Collider A, Collider B);
-    bool isColling(Collider B);
-
-    int getHp();
-
-
-protected:
-    glm::vec2 m_position;
-    glm::vec2 m_scale; 
-    glm::vec4 m_vertici;
-
-    
-
-
+    glm::vec3 getBoxMin();
+    glm::vec3 getBoxMax();
+    glm::vec3 m_position;
+    glm::vec3 m_scale;
+    int m_type;
 
 };
 

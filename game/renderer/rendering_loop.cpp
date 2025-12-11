@@ -165,7 +165,6 @@ glfwSetWindowSize(window, winWidth, winHeight);
 
 
 
-
             // first, configure the cube's VAO (and VBO)
 
             glGenBuffers(1, &instanceVBO);
@@ -295,12 +294,7 @@ glfwSetWindowSize(window, winWidth, winHeight);
         //3d
 
        
-        playerTranslations[0] = glm::vec2(0.f,0.f);
-        playerTranslations[1] = glm::vec2(0.f, 0.f);
-        glBindBuffer(GL_ARRAY_BUFFER, playerVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * 2, &playerTranslations[0], GL_STREAM_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0); 
-
+ 
        
 
         glm::mat4 model = glm::mat4(1.f);
@@ -403,22 +397,24 @@ glfwSetWindowSize(window, winWidth, winHeight);
         glBindTexture(GL_TEXTURE_2D, floor_specTexture);
         glBindVertexArray(floorVAO);
         glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 1); 
-
         
-        setPlayerDistance(glm::distance(player.getPosition(), enemyPosition));
-        model = glm::translate(glm::mat4(1.0f), glm::vec3(enemyPosition.x, enemyPosition.y - 0.5,enemyPosition.z)); 
+        
+        setPlayerDistance(glm::distance(player.getPosition(), enemyPlayer.getPosition()));
+        model = glm::translate(glm::mat4(1.0f), glm::vec3(enemyPlayer.getPosition().x, enemyPlayer.getPosition().y - 0.5,enemyPlayer.getPosition().z)); 
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, enemy_diffTexture);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, enemy_diffTexture);
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &model[0][0]);
-        model = glm::translate(glm::mat4(1.0f), glm::vec3(enemyPosition.x, enemyPosition.y - 0.5,enemyPosition.z)); 
+        model = glm::translate(glm::mat4(1.0f), glm::vec3(enemyPlayer.getPosition().x, enemyPlayer.getPosition().y - 0.5,enemyPlayer.getPosition().z)); 
 
         glBindVertexArray(playerVAO);
         glDrawArraysInstanced(GL_TRIANGLES, 0, (sizeof(playerMesh)/sizeof(float))/8, 1); 
 
       
 
-        if(b_debug_menu_rendering) debug_menu_rendering(player.getPosition(), enemyPosition);
+        if(b_debug_menu_rendering) debug_menu_rendering(player.getPosition(), enemyPlayer.getPosition());
         if(b_pause_menu_rendering) {pause_menu_rendering(); b_debug_menu_rendering = false;}
         
         // Renderizza il mirino sempre visibile in gioco (non durante la pausa)
@@ -569,68 +565,71 @@ void shoot_raycast() {
     // 1. Ottieni la posizione e direzione dalla camera del giocatore
     glm::vec3 shooterPos = player.camera.Position;
     glm::vec3 shootDirection = player.camera.Front;  // Front è la direzione in cui guarda la camera
-    
-    // 2. Definisci la hitbox del nemico (AABB - Axis Aligned Bounding Box)
-    glm::vec3 enemyCenter = glm::vec3(enemyPosition.x, enemyPosition.y + 0.1f, enemyPosition.z);
-    glm::vec3 hitboxSize = glm::vec3(0.1f, 0.2f, 0.1f);  // Larghezza x Altezza x Profondità della hitbox
-    
-    // Calcola min e max della hitbox
-    glm::vec3 boxMin = enemyCenter - hitboxSize * 0.5f;
-    glm::vec3 boxMax = enemyCenter + hitboxSize * 0.5f;
-    
-    // 3. Ray-AABB intersection (algoritmo di Slabs)
-    float tMin = 0.0f;
-    float tMax = 100.0f;  // Distanza massima del raycast
-    
-    for (int i = 0; i < 3; i++) {  // Per ogni asse (x, y, z)
-        if (abs(shootDirection[i]) < 0.0001f) {
-            // Raggio parallelo all'asse - controlla se è fuori dalla slab
-            if (shooterPos[i] < boxMin[i] || shooterPos[i] > boxMax[i]) {
-                // Non c'è intersezione
-                tMax = -1.0f;
-                break;
+    Collider* colliders[2];
+
+    colliders[1] = &enemyPlayer.headHitBox;
+    colliders[0] = &enemyPlayer.bodyHitBox;
+
+    if(glm::distance(shooterPos, enemyPlayer.headHitBox.m_position) <=
+       glm::distance(shooterPos, enemyPlayer.bodyHitBox.m_position))
+    {   
+        colliders[0] = &enemyPlayer.headHitBox;
+        colliders[1] = &enemyPlayer.bodyHitBox;
+    }
+
+    for(int colliderIndex = 0; colliderIndex < 2; colliderIndex++)
+    { 
+        // 3. Ray-AABB intersection (algoritmo di Slabs)
+        float tMin = 0.0f;
+        float tMax = 100.0f;  // Distanza massima del raycast
+
+        glm::vec3 boxMin = colliders[colliderIndex]->getBoxMin();
+        glm::vec3 boxMax = colliders[colliderIndex]->getBoxMax(); 
+        for (int i = 0; i < 3; i++) {  // Per ogni asse (x, y, z)
+            if (abs(shootDirection[i]) < 0.0001f) {
+                // Raggio parallelo all'asse - controlla se è fuori dalla slab
+                if (shooterPos[i] < boxMin[i] || shooterPos[i] > boxMax[i]) {
+                    // Non c'è intersezione
+                    tMax = -1.0f;
+                    break;
+                }
+            } else {
+                // Calcola intersezioni con i piani della slab
+                float t1 = (boxMin[i] - shooterPos[i]) / shootDirection[i];
+                float t2 = (boxMax[i] - shooterPos[i]) / shootDirection[i];
+                
+                if (t1 > t2) std::swap(t1, t2);  // Assicurati che t1 < t2
+                
+                tMin = std::max(tMin, t1);
+                tMax = std::min(tMax, t2);
+                
+                if (tMin > tMax) break;  // Nessuna intersezione
             }
+        }
+        
+        // 4. Verifica se c'è stata un'intersezione valida
+        bool isHit = (tMin <= tMax) && (tMax >= 0.0f) && (tMin <= 100.0f);
+        
+        if (isHit) {
+
+  
+            
+            // 6. Calcola il danno base
+            float damage = colliders[colliderIndex]->m_type == 0 ? 100 : 40;
+            
+
+            
+            // 7. Invia l'evento di sparo al server con i dati
+           // sendShootEvent(shooterPos, shootDirection, damage, hitDistance);
+            
+            damage < 100 ?  std::cout << "bodyhit! Damage: " << damage << std::endl 
+                         :  std::cout << "HEADSHOT! Damage: " << damage << std::endl;
+            colliderIndex = 2; // cosí esco del for
         } else {
-            // Calcola intersezioni con i piani della slab
-            float t1 = (boxMin[i] - shooterPos[i]) / shootDirection[i];
-            float t2 = (boxMax[i] - shooterPos[i]) / shootDirection[i];
+            //sendShootEvent(shooterPos, shootDirection, 0.0f, 0.0f);
             
-            if (t1 > t2) std::swap(t1, t2);  // Assicurati che t1 < t2
-            
-            tMin = std::max(tMin, t1);
-            tMax = std::min(tMax, t2);
-            
-            if (tMin > tMax) break;  // Nessuna intersezione
+            std::cout << colliders[colliderIndex]->m_type <<", MISS! Ray didn't intersect enemy hitbox, pos: " << colliders[colliderIndex]->getBoxMax().x << ", "<< colliders[colliderIndex]->getBoxMax().y << ", "<< colliders[colliderIndex]->getBoxMax().z << " ~ " << colliders[colliderIndex]->getBoxMin().x << ", "<< colliders[colliderIndex]->getBoxMin().y << ", "<< colliders[colliderIndex]->getBoxMin().z << std::endl;
         }
-    }
-    
-    // 4. Verifica se c'è stata un'intersezione valida
-    bool isHit = (tMin <= tMax) && (tMax >= 0.0f) && (tMin <= 100.0f);
-    
-    if (isHit) {
-        // 5. Calcola la distanza del colpo
-        float hitDistance = tMin;
-        glm::vec3 hitPoint = shooterPos + shootDirection * hitDistance;
-        
-        // 6. Calcola il danno base
-        float baseDamage = 25.0f;
-        float damage = baseDamage;
-        
-        // Riduci il danno in base alla distanza
-        if (hitDistance > 30.0f) {
-            damage *= 0.7f;  // 30% di danno in meno se sei lontano
-        }
-        
-        // 7. Invia l'evento di sparo al server con i dati
-        sendShootEvent(shooterPos, shootDirection, damage, hitDistance);
-        
-        std::cout << "HIT! Damage: " << damage << " Distance: " << hitDistance 
-                  << " Point: (" << hitPoint.x << ", " << hitPoint.y << ", " << hitPoint.z << ")" << std::endl;
-    } else {
-        // Sparo mancato - invia comunque al server per validazione (anti-cheat)
-        sendShootEvent(shooterPos, shootDirection, 0.0f, 0.0f);
-        
-        std::cout << "MISS! Ray didn't intersect enemy hitbox" << std::endl;
-    }
-}
+
+    }}
 

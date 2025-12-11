@@ -15,12 +15,14 @@
 #include "Collider.h"
 
 Player::Player(const glm::vec3 position, const glm::vec3 velocity, const glm::vec3 direction)
+    : headHitBox(position + glm::vec3(0, HEADHITBOX_VOFFESET, 0), glm::vec3(0.14f,HEADHITBOX_VDIM,0.14f), 0) 
+    , bodyHitBox(position, glm::vec3(0.14f,BODYHITBOX_VDIM,0.14f), 1)
+
 {
     m_hp = base_hp;
     Player::setPosition(position);
     Player::setVelocity(velocity);
     Player::setDirection(direction);
-    //collider = Collider(position, 0.5f);
 }
 
 glm::vec3 Player::getPosition()
@@ -31,6 +33,8 @@ glm::vec3 Player::getPosition()
 void Player::setPosition(const glm::vec3 position)
 {
     m_position = position;
+    headHitBox.m_position = glm::vec3(position.x, position.y+HEADHITBOX_VOFFESET, position.z);
+    bodyHitBox.m_position = position;
 }
 
 void Player::setVelocity(const glm::vec3 velocity)
@@ -128,7 +132,6 @@ void ClientPlayer::updatePosition(float deltaTime)
 
    
 
-    //camera.Position = m_position;
     camera.Position = glm::vec3(m_position.x, m_position.y+0.2, m_position.z);
     //std::cout << m_position.x << ", " << m_position.y << ", " << m_position.z << std::endl;
 }

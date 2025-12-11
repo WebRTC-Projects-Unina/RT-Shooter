@@ -13,6 +13,11 @@
 #include <string>
 #include <vector>
 
+#define HEADHITBOX_VOFFESET 0.15f
+#define HEADHITBOX_VDIM 0.07f
+#define BODYHITBOX_VDIM 0.1499f
+
+
 class Player {
 public:
     inline static float gravity = 9.81;
@@ -43,6 +48,8 @@ public:
 
     int getHp();
 
+    Collider headHitBox;
+    Collider bodyHitBox; 
 
 protected:
     glm::vec3 m_position;
