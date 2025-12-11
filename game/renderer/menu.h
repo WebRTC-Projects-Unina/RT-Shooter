@@ -24,6 +24,25 @@ struct ChatMessage {
 std::vector<ChatMessage> chatMessages;
 char chatInputBuffer[256] = "";
 bool chatInputFocused = false;
+std::string playerNickname = "";  // Vuoto inizialmente, viene settato da SetPlayerNickname
+// Funzione chiamata da JS quando arriva un messaggio di chat
+extern "C" {
+EMSCRIPTEN_KEEPALIVE
+void OnChatMessageReceived(const char* message, const char* senderNickname) {
+    ChatMessage msg;
+    msg.text = "[" + std::string(senderNickname) + "]: " + std::string(message);
+    msg.isMine = false;
+    msg.timestamp = glfwGetTime();
+    chatMessages.push_back(msg);
+}
+}
+
+extern "C" {
+EMSCRIPTEN_KEEPALIVE
+void SetPlayerNickname(const char* nickname) {
+    playerNickname = std::string(nickname);
+}
+}
 
 
 void imgui_style_setup(){
@@ -215,14 +234,14 @@ void chat_rendering(bool isActive) {
     
     // Trasparenza testo: più trasparente se non attiva
     float textAlpha = isActive ? 1.0f : 0.5f;
-    
+    // Visualizza i messaggi
     for (const auto& msg : chatMessages) {
         if (msg.isMine) {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 1.0f, 0.4f, textAlpha)); // Verde
-            ImGui::Text("[Tu]: %s", msg.text.c_str());
+            ImGui::Text("[%s]: %s", playerNickname.c_str(), msg.text.c_str());
         } else {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.4f, 0.4f, textAlpha)); // Rosso
-            ImGui::Text("[Nemico]: %s", msg.text.c_str());
+            ImGui::Text("%s", msg.text.c_str());
         }
         ImGui::PopStyleColor();
     }
@@ -254,21 +273,18 @@ void chat_rendering(bool isActive) {
                 myMsg.timestamp = glfwGetTime();
                 chatMessages.push_back(myMsg);
                 
-                // TODO: Invia il messaggio al server tramite socket
-                // sendChatMessage(chatInputBuffer);
-                
-                // Pulisci l'input
-                memset(chatInputBuffer, 0, sizeof(chatInputBuffer));
+                // Invia il messaggio al server tramite socket
+                sendChatMessage(chatInputBuffer);
             }
             
-            // Chiudi la chat dopo l'invio (diventa passiva)
+            // Pulisci l'input e chiudi la chat (Invio sempre chiude)
+            memset(chatInputBuffer, 0, sizeof(chatInputBuffer));
             b_chat_rendering = false;
             chatInputFocused = false;
         }
-        
-        // ESC chiude la chat (diventa passiva)
-        if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
-            b_chat_rendering = false;
+    } else {
+        // Se la chat viene chiusa (non attiva), resetta lo stato
+        if (chatInputFocused) {
             chatInputFocused = false;
             memset(chatInputBuffer, 0, sizeof(chatInputBuffer));
         }

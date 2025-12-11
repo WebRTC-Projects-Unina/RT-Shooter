@@ -31,7 +31,7 @@ CMD = emcc main.cpp \
     -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap','callMain'] \
     --preload-file res \
     -O3 \
-    -o ../game-ui/public/test.js
+    -o ..\\game-ui\\public\\test.js
 
 run:
 	@$(CMD)

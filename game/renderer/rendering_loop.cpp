@@ -530,8 +530,10 @@ void processInput(GLFWwindow *window)
 
     }
 
-    // Tasto T per aprire/chiudere la chat
-    if(glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS) b_lastPressed_KEY_T = GLFW_PRESS;
+    // Tasto T per aprire/chiudere la chat (blocca il tasto se la chat è già attiva)
+    if(glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS && !b_chat_rendering) {
+        b_lastPressed_KEY_T = GLFW_PRESS;
+    }
     if (b_lastPressed_KEY_T == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_T) != GLFW_PRESS)
     {
         b_lastPressed_KEY_T = 0;
