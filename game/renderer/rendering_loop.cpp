@@ -535,7 +535,9 @@ void processInput(GLFWwindow *window)
         b_debug_menu_rendering = b_debug_menu_rendering ? false : true; 
     }
 
-    if(glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) b_lastPressed_KEY_M = GLFW_PRESS;
+    if(glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS && !b_chat_rendering) {
+        b_lastPressed_KEY_M = GLFW_PRESS;
+    }
     if (b_lastPressed_KEY_M == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_M) != GLFW_PRESS)
     {
         b_lastPressed_KEY_M = 0;
