@@ -402,19 +402,21 @@ glfwSetWindowSize(window, winWidth, winHeight);
         glBindVertexArray(floorVAO);
         glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 1); 
         
-        
-        setPlayerDistance(glm::distance(player.getPosition(), enemyPlayer.getPosition()));
-        model = glm::translate(glm::mat4(1.0f), glm::vec3(enemyPlayer.getPosition().x, enemyPlayer.getPosition().y - 0.5,enemyPlayer.getPosition().z)); 
+        // Renderizza il nemico SOLO se è vivo
+        if(b_enemy_alive) {
+            setPlayerDistance(glm::distance(player.getPosition(), enemyPlayer.getPosition()));
+            model = glm::translate(glm::mat4(1.0f), glm::vec3(enemyPlayer.getPosition().x, enemyPlayer.getPosition().y - 0.5,enemyPlayer.getPosition().z)); 
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, enemy_diffTexture);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, enemy_diffTexture);
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &model[0][0]);
-        model = glm::translate(glm::mat4(1.0f), glm::vec3(enemyPlayer.getPosition().x, enemyPlayer.getPosition().y - 0.5,enemyPlayer.getPosition().z)); 
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, enemy_diffTexture);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, enemy_diffTexture);
+            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &model[0][0]);
+            model = glm::translate(glm::mat4(1.0f), glm::vec3(enemyPlayer.getPosition().x, enemyPlayer.getPosition().y - 0.5,enemyPlayer.getPosition().z)); 
 
-        glBindVertexArray(playerVAO);
-        glDrawArraysInstanced(GL_TRIANGLES, 0, (sizeof(playerMesh)/sizeof(float))/8, 1); 
+            glBindVertexArray(playerVAO);
+            glDrawArraysInstanced(GL_TRIANGLES, 0, (sizeof(playerMesh)/sizeof(float))/8, 1);
+        } 
 
       
 
@@ -610,6 +612,11 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 }
 
 void shoot_raycast() {
+    // Se il nemico è morto, non puoi sparare su di lui
+    if (!b_enemy_alive) {
+        return;
+    }
+    
     // 1. Ottieni la posizione e direzione dalla camera del giocatore
     glm::vec3 shooterPos = player.camera.Position;
     glm::vec3 shootDirection = player.camera.Front;  // Front è la direzione in cui guarda la camera
@@ -669,6 +676,9 @@ void shoot_raycast() {
 
             // 7. Invia l'evento di sparo al server con i dati
            sendShootEvent(shooterPos, shootDirection, damage, glm::distance(player.getPosition(),enemyPlayer.getPosition()));
+           
+           // 8. Riproduci suono di hit
+           playHitmarkerSound();
 
             damage < 100 ?  std::cout << "bodyhit! Damage: " << damage << std::endl 
                          :  std::cout << "HEADSHOT! Damage: " << damage << std::endl;

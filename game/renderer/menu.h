@@ -40,6 +40,9 @@ float playerHP = 100.0f;
 float enemyHP = 100.0f;
 std::string killedByNickname = "";  // Nome di chi ci ha ucciso
 bool b_death_screen = false;  // True quando il player è morto
+bool b_enemy_alive = true;  // True quando il nemico è vivo, false quando è morto
+float enemyDeathTime = 0.0f;  // Traccia quando il nemico è morto
+float enemyRespawnDelay = 5.0f;  // 5 secondi prima che il nemico possa riapparire
 // Funzione chiamata da JS quando arriva un messaggio di chat
 extern "C" {
 EMSCRIPTEN_KEEPALIVE
@@ -73,6 +76,9 @@ void OnEnemyShot(float damage, const char* shooterNickname) {
     playerHP -= damage;
     std::cout << "Sono stato HITTATO! Danno ricevuto: " << damage << " HP rimanenti: " << playerHP << std::endl;
     
+    // Riproduci suono di danno
+    playDamageSound();
+    
     // Se il player muore
     if (playerHP <= 0.0f) {
         playerHP = 0.0f;
@@ -80,9 +86,40 @@ void OnEnemyShot(float damage, const char* shooterNickname) {
         playerDeaths++;
         killedByNickname = std::string(shooterNickname);  // Salva il nome di chi ci ha ucciso
         std::cout << "Killed by: " << killedByNickname << std::endl;
+        sendPlayerDeathEvent();  // Notifica al server che sei morto
     }
 }
 }
+
+// Callback quando il nemico muore
+extern "C" {
+EMSCRIPTEN_KEEPALIVE
+void OnEnemyDied() {
+    b_enemy_alive = false;
+    enemyDeathTime = glfwGetTime();  // Registra il tempo di morte
+    std::cout << "You killed the enemy!" << std::endl;
+}
+}
+
+// Callback quando il nemico respawna (riceve la posizione significa che è vivo)
+extern "C" {
+EMSCRIPTEN_KEEPALIVE
+void OnEnemyAlive() {
+    // Ignora gli update per 5 secondi dopo la morte
+    if (enemyDeathTime > 0.0f) {
+        float timeSinceDeath = glfwGetTime() - enemyDeathTime;
+        if (timeSinceDeath < enemyRespawnDelay) {
+            // Still in the 5-second death window, ignore this update
+            return;
+        }
+        // 5 secondi sono passati, il nemico può riapparire
+        enemyDeathTime = 0.0f;
+    }
+    
+    b_enemy_alive = true;
+}
+}
+
 
 
 void imgui_style_setup(){

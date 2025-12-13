@@ -64,6 +64,11 @@ io.on("connection", (socket) => {
     });
   });
 
+  socket.on("player_death", (data) => {
+    // Server relay - informa l'altro player che questo player è morto
+    socket.broadcast.emit("enemy_died", data);
+  });
+
   socket.onclose = (event) => {
   console.log("WebSocket disconnessa.");
   

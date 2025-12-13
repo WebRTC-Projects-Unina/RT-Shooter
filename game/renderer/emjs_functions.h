@@ -54,8 +54,10 @@ EM_JS(void, RegisterSocketIOCallback, (), {
     }
 
     Module.socket.on("enemy_update", (pos) => {
+        // Quando ricevi la posizione del nemico, sai che è vivo
+        Module.ccall("OnEnemyAlive", null, [], []);
+        
         const json = JSON.stringify(pos);
-
         Module.ccall(
             "OnMessageFromJS", // nome funzione C++
             null,              // ritorno void
@@ -82,6 +84,11 @@ EM_JS(void, RegisterSocketIOCallback, (), {
             ["string", "string"],
             [data.message, data.senderNickname]
         );
+    });
+    
+    // Quando il nemico muore
+    Module.socket.on("enemy_died", (data) => {
+        Module.ccall("OnEnemyDied", null, [], []);
     });
     
     // Quando il nemico spara - calcola il danno lato client
@@ -174,6 +181,29 @@ EM_JS(int, canvas_get_height, (), {
      if(!canvasElement) return 720;
     canvasElement.height =  window.innerHeight;
     return canvasElement.height;
+});
+
+// Audio playback functions
+EM_JS(void, playHitmarkerSound, (), {
+    const hitmarkerElement = document.getElementById('hitmarkerSound');
+    if (hitmarkerElement) {
+        hitmarkerElement.currentTime = 0;
+        hitmarkerElement.play().catch(err => console.log("Hitmarker play error:", err));
+    }
+});
+
+EM_JS(void, playDamageSound, (), {
+    const damageElement = document.getElementById('damageSound');
+    if (damageElement) {
+        damageElement.currentTime = 0;
+        damageElement.play().catch(err => console.log("Damage play error:", err));
+    }
+});
+
+// Invia evento di morte al server
+EM_JS(void, sendPlayerDeathEvent, (), {
+    if(!Module.socket) return;
+    Module.socket.emit("player_death", {});
 });
 
 #endif
