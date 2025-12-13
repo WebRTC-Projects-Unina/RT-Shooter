@@ -98,7 +98,9 @@ EMSCRIPTEN_KEEPALIVE
 void OnEnemyDied() {
     b_enemy_alive = false;
     enemyDeathTime = glfwGetTime();  // Registra il tempo di morte
-    std::cout << "You killed the enemy!" << std::endl;
+    playerKills++;  // Incremente le kill localmente
+    std::cout << "You killed the enemy! Total kills: " << playerKills << std::endl;
+    sendPlayerKilledEvent();  // Manda evento al server per sincronizzare
 }
 }
 
@@ -120,6 +122,25 @@ void OnEnemyAlive() {
     b_enemy_alive = true;
 }
 }
+
+// Callback quando il nemico ha ucciso qualcuno (incremente le sue kill)
+extern "C" {
+EMSCRIPTEN_KEEPALIVE
+void OnEnemyKilled() {
+    enemyKills++;
+    std::cout << "Enemy got a kill! Total: " << enemyKills << std::endl;
+}
+}
+
+// Callback quando il nemico muore (incremente le sue death)
+extern "C" {
+EMSCRIPTEN_KEEPALIVE
+void OnEnemyDeath() {
+    enemyDeaths++;
+    std::cout << "Enemy died! Total deaths: " << enemyDeaths << std::endl;
+}
+}
+
 
 
 

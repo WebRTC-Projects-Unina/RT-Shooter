@@ -91,6 +91,16 @@ EM_JS(void, RegisterSocketIOCallback, (), {
         Module.ccall("OnEnemyDied", null, [], []);
     });
     
+    // Quando il nemico ha ucciso qualcuno (incremente le sue kill)
+    Module.socket.on("enemy_killed", (data) => {
+        Module.ccall("OnEnemyKilled", null, [], []);
+    });
+    
+    // Quando il nemico muore (incremente le sue death)
+    Module.socket.on("enemy_death", (data) => {
+        Module.ccall("OnEnemyDeath", null, [], []);
+    });
+    
     // Quando il nemico spara - calcola il danno lato client
     Module.socket.on("player_shot", (data) => {
         const damage = (data.damage !== undefined) ? data.damage : 25;  // Permette 0 danno se miss
@@ -204,6 +214,12 @@ EM_JS(void, playDamageSound, (), {
 EM_JS(void, sendPlayerDeathEvent, (), {
     if(!Module.socket) return;
     Module.socket.emit("player_death", {});
+});
+
+// Invia evento quando hai ucciso il nemico
+EM_JS(void, sendPlayerKilledEvent, (), {
+    if(!Module.socket) return;
+    Module.socket.emit("player_killed", {});
 });
 
 #endif

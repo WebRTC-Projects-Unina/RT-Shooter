@@ -67,6 +67,12 @@ io.on("connection", (socket) => {
   socket.on("player_death", (data) => {
     // Server relay - informa l'altro player che questo player è morto
     socket.broadcast.emit("enemy_died", data);
+    socket.broadcast.emit("enemy_death", data);  // Incremente le death stats dell'altro
+  });
+
+  socket.on("player_killed", (data) => {
+    // Server relay - informa l'altro player che questo player ha fatto una kill
+    socket.broadcast.emit("enemy_killed", data);
   });
 
   socket.onclose = (event) => {
