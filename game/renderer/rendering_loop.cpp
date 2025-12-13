@@ -434,11 +434,32 @@ glfwSetWindowSize(window, winWidth, winHeight);
             
             // Se sono passati 5 secondi, respawna
             if(timeSinceDeath >= respawnDelay) {
+                // Scegli lo spawn point più lontano dal nemico (killer)
+                glm::vec3 enemyPos = enemyPlayer.getPosition();
+                float distA = glm::distance(enemyPos, spawnPoints[0]);
+                float distB = glm::distance(enemyPos, spawnPoints[1]);
+                int chosenIndex = distA >= distB ? 0 : 1;
+                glm::vec3 chosenSpawn = spawnPoints[chosenIndex];
+
+                // Respawn al punto scelto
+                player.setPosition(chosenSpawn);
+                player.setVelocity(glm::vec3(0.0f));
+                player.camera.Position = glm::vec3(chosenSpawn.x, chosenSpawn.y + 0.2f, chosenSpawn.z);
+                // Orienta la camera per spawn: 0 guarda 180° rispetto al default, 1 guarda 45° a sinistra
+                if (chosenIndex == 0) {
+                    player.camera.Yaw = 90.0f;   // 180° rispetto a -90°
+                } else {
+                    player.camera.Yaw = -135.0f; // 45° a sinistra rispetto a -90°
+                }
+                player.camera.Pitch = PITCH;  // 0.0f
+                player.camera.ProcessMouseMovement(0.0f, 0.0f, false); // aggiorna i vettori senza modificare yaw/pitch
+                player.setDirection(player.camera.Front);
+
                 playerHP = 100.0f;
                 b_death_screen = false;
                 deathTime = 0.0f;
                 killedByNickname = "";
-                std::cout << "Respawned! HP: " << playerHP << std::endl;
+                std::cout << "Respawned at far spawn! HP: " << playerHP << std::endl;
             }
             return;  // Non renderizzare il resto della scena durante la morte
         }

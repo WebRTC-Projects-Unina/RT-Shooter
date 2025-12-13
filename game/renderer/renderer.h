@@ -60,6 +60,11 @@
 
     inline ClientPlayer player(glm::vec3(3.0f, 3.0f, 3.0f), glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, -1.0f)); 
     inline Player enemyPlayer(glm::vec3(3.0f, 0.0f, 3.0f), glm::vec3(0), glm::vec3(1.f, 0, 0));
+    // Spawn points forniti dall'utente (posizioni testate in mappa)
+    inline glm::vec3 spawnPoints[2] = {
+        glm::vec3(2.517f, 0.0f, 1.980f),   // Spawn A (vicino area iniziale)
+        glm::vec3(19.260f, 0.0f, 17.605f)  // Spawn B (lato opposto)
+    };
 
 
 
