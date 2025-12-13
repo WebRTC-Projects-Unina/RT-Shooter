@@ -43,6 +43,7 @@ bool b_death_screen = false;  // True quando il player è morto
 bool b_enemy_alive = true;  // True quando il nemico è vivo, false quando è morto
 float enemyDeathTime = 0.0f;  // Traccia quando il nemico è morto
 float enemyRespawnDelay = 5.0f;  // 5 secondi prima che il nemico possa riapparire
+float hitFeedbackTimer = 0.0f;   // Timer breve per il feedback visivo dell'hit
 // Funzione chiamata da JS quando arriva un messaggio di chat
 extern "C" {
 EMSCRIPTEN_KEEPALIVE
@@ -221,21 +222,39 @@ void crosshair_rendering() {
         ImDrawList* draw_list = ImGui::GetWindowDrawList();
         ImVec2 center = ImVec2(winWidth * 0.5f, winHeight * 0.5f);
         
-        ImU32 col_white = IM_COL32(255, 255, 255, 255);
+        ImU32 col_normal = IM_COL32(255, 255, 255, 255);
+        ImU32 col_hit    = IM_COL32(0, 200, 255, 255); // Azzurro per feedback positivo
         float thickness = 1.5f;
         float inner_line_length = 10.0f;
         float inner_line_offset = 0.0f;  // Parte dal centro
+
+        // Aggiorna il timer di feedback se attivo
+        if (hitFeedbackTimer > 0.0f) {
+            hitFeedbackTimer = std::max(0.0f, hitFeedbackTimer - ImGui::GetIO().DeltaTime);
+        }
+
+        const bool isHitFlash = hitFeedbackTimer > 0.0f;
+        ImU32 col = isHitFlash ? col_hit : col_normal;
+
+        if (isHitFlash) {
+            // Mirino ruotato (a X) per il feedback dell'hit
+            draw_list->AddLine(ImVec2(center.x - inner_line_length, center.y - inner_line_length), center, col, thickness);
+            draw_list->AddLine(center, ImVec2(center.x + inner_line_length, center.y + inner_line_length), col, thickness);
+            draw_list->AddLine(ImVec2(center.x - inner_line_length, center.y + inner_line_length), center, col, thickness);
+            draw_list->AddLine(center, ImVec2(center.x + inner_line_length, center.y - inner_line_length), col, thickness);
+        } else {
+            // Mirino classico a croce
+            draw_list->AddLine(ImVec2(center.x, center.y - inner_line_offset - inner_line_length),
+                              ImVec2(center.x, center.y - inner_line_offset), col, thickness);
+            draw_list->AddLine(ImVec2(center.x, center.y + inner_line_offset),
+                              ImVec2(center.x, center.y + inner_line_offset + inner_line_length), col, thickness);
+            draw_list->AddLine(ImVec2(center.x - inner_line_offset - inner_line_length, center.y),
+                              ImVec2(center.x - inner_line_offset, center.y), col, thickness);
+            draw_list->AddLine(ImVec2(center.x + inner_line_offset, center.y),
+                              ImVec2(center.x + inner_line_offset + inner_line_length, center.y), col, thickness);
+        }
         
-        draw_list->AddLine(ImVec2(center.x, center.y - inner_line_offset - inner_line_length),
-                          ImVec2(center.x, center.y - inner_line_offset), col_white, thickness);
-        draw_list->AddLine(ImVec2(center.x, center.y + inner_line_offset),
-                          ImVec2(center.x, center.y + inner_line_offset + inner_line_length), col_white, thickness);
-        draw_list->AddLine(ImVec2(center.x - inner_line_offset - inner_line_length, center.y),
-                          ImVec2(center.x - inner_line_offset, center.y), col_white, thickness);
-        draw_list->AddLine(ImVec2(center.x + inner_line_offset, center.y),
-                          ImVec2(center.x + inner_line_offset + inner_line_length, center.y), col_white, thickness);
-        
-        draw_list->AddCircleFilled(center, 0.5f, col_white, 4);
+        draw_list->AddCircleFilled(center, 0.5f, col, 4);
 
         ImGui::End();
     }

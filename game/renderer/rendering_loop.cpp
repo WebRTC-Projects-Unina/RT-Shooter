@@ -679,6 +679,7 @@ void shoot_raycast() {
            
            // 8. Riproduci suono di hit
            playHitmarkerSound();
+               hitFeedbackTimer = 0.2f; // attiva flash visivo del mirino per 200 ms
 
             damage < 100 ?  std::cout << "bodyhit! Damage: " << damage << std::endl 
                          :  std::cout << "HEADSHOT! Damage: " << damage << std::endl;
