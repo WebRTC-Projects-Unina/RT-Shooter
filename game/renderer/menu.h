@@ -10,6 +10,7 @@
 #include <vector>
 #include <string>
 #include <algorithm>  // Per std::sort
+#include <cstdio>     // Per std::snprintf
 
 bool b_debug_menu_rendering = false;
 bool b_pause_menu_rendering = false;
@@ -34,6 +35,15 @@ int playerDeaths = 0;
 std::string enemyNickname = "";
 int enemyKills = 0;
 int enemyDeaths = 0;
+bool b_match_over = false;      // true quando la partita è finita
+bool b_player_won = false;      // true se questo client ha vinto
+float matchEndTime = 0.0f;      // tempo in cui è terminata la partita
+float matchEndDuration = 15.0f; // durata della schermata finale prima del ritorno alla lobby
+bool b_match_end_exit_sent = false; // evita chiamate multiple a exitGame
+
+// Forward declarations per la logica di fine partita
+void TriggerMatchEnd(bool playerWon);
+void CheckWinCondition();
 
 // Variabili per l'HP
 float playerHP = 100.0f;
@@ -101,6 +111,7 @@ void OnEnemyDied() {
     playerKills++;  // Incremente le kill localmente
     std::cout << "You killed the enemy! Total kills: " << playerKills << std::endl;
     sendPlayerKilledEvent();  // Manda evento al server per sincronizzare
+    CheckWinCondition();
 }
 }
 
@@ -129,6 +140,7 @@ EMSCRIPTEN_KEEPALIVE
 void OnEnemyKilled() {
     enemyKills++;
     std::cout << "Enemy got a kill! Total: " << enemyKills << std::endl;
+    CheckWinCondition();
 }
 }
 
@@ -139,6 +151,29 @@ void OnEnemyDeath() {
     enemyDeaths++;
     std::cout << "Enemy died! Total deaths: " << enemyDeaths << std::endl;
 }
+}
+
+
+void TriggerMatchEnd(bool playerWon) {
+    if (b_match_over) return;
+
+    b_match_over = true;
+    b_player_won = playerWon;
+    matchEndTime = glfwGetTime();
+    b_scoreboard_rendering = true;   // scoreboard sempre visibile durante la schermata finale
+    b_death_screen = false;          // disattiva eventuale death screen in corso
+    b_pause_menu_rendering = false;  // evita menu pausa durante la fine match
+    player.setVelocity(glm::vec3(0.0f));
+}
+
+void CheckWinCondition() {
+    if (b_match_over) return;
+
+    if (playerKills >= 10) {
+        TriggerMatchEnd(true); // player ha vinto
+    } else if (enemyKills >= 10) {
+        TriggerMatchEnd(false); // nemico ha vinto
+    }
 }
 
 
@@ -227,8 +262,8 @@ void debug_menu_rendering(glm::vec3 playerPos, glm::vec3 enemyPosition) {
 
 
 void crosshair_rendering() {
-     // ===== CROSSHAIR =====
-    if (!b_pause_menu_rendering && !b_chat_rendering) {
+    // ===== CROSSHAIR =====
+    if (!b_pause_menu_rendering && !b_chat_rendering && !b_match_over) {
         ImGuiWindowFlags window_flags = 
             ImGuiWindowFlags_NoDecoration | 
             ImGuiWindowFlags_NoMove | 
@@ -414,7 +449,7 @@ void chat_rendering() {
 void scoreboard_rendering() {
     
     // ===== SCOREBOARD =====
-    if (b_scoreboard_rendering) {
+    if (b_scoreboard_rendering || b_match_over) {
         ImGuiWindowFlags window_flags = 
             ImGuiWindowFlags_NoDecoration | 
             ImGuiWindowFlags_NoMove | 
@@ -557,6 +592,50 @@ void death_screen_rendering() {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
+void match_end_rendering() {
+    if (!b_match_over) return;
+
+    ImGuiWindowFlags window_flags = 
+        ImGuiWindowFlags_NoDecoration | 
+        ImGuiWindowFlags_NoMove | 
+        ImGuiWindowFlags_NoSavedSettings | 
+        ImGuiWindowFlags_NoInputs |
+        ImGuiWindowFlags_NoBackground;
+
+    float elapsed = glfwGetTime() - matchEndTime;
+    float remaining = matchEndDuration - elapsed;
+    if (remaining < 0.0f) remaining = 0.0f;
+
+    ImGui::SetNextWindowPos(ImVec2(0, 0));
+    ImGui::SetNextWindowSize(ImVec2(winWidth, winHeight));
+    ImGui::SetNextWindowBgAlpha(0.75f);
+
+    ImGui::Begin("MatchEndScreen", NULL, window_flags);
+
+    const char* endText = b_player_won ? "HAI VINTO" : "HAI PERSO";
+    ImVec4 endColor = b_player_won ? ImVec4(0.2f, 1.0f, 0.2f, 1.0f) : ImVec4(1.0f, 0.2f, 0.2f, 1.0f);
+    ImVec2 endTextSize = ImGui::CalcTextSize(endText);
+    ImGui::SetCursorPosX((winWidth - endTextSize.x) * 0.5f);
+    ImGui::SetCursorPosY(winHeight * 0.35f);
+    ImGui::TextColored(endColor, "%s", endText);
+
+    char timerBuf[64];
+    int remainingSeconds = static_cast<int>(remaining + 0.999f);
+    if (remainingSeconds < 0) remainingSeconds = 0;
+    std::snprintf(timerBuf, sizeof(timerBuf), "Ritorno alla lobby in %d s", remainingSeconds);
+    ImVec2 timerSize = ImGui::CalcTextSize(timerBuf);
+    ImGui::SetCursorPosX((winWidth - timerSize.x) * 0.5f);
+    ImGui::SetCursorPosY(winHeight * 0.60f);
+    ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.9f), "%s", timerBuf);
+
+    ImGui::End();
+
+    if (remaining <= 0.0f && !b_match_end_exit_sent) {
+        b_match_end_exit_sent = true;
+        exitGame();
+    }
+}
+
 // FUNZIONE UNIFICATA per tutto l'UI ImGui
 void render_all_ui() {
     // Inizia il frame ImGui UNA SOLA VOLTA
@@ -569,6 +648,7 @@ void render_all_ui() {
     crosshair_rendering();
     health_bar_rendering();
     scoreboard_rendering();
+    match_end_rendering();
     if(b_debug_menu_rendering) debug_menu_rendering(player.getPosition(), enemyPlayer.getPosition());
     if(b_pause_menu_rendering) {pause_menu_rendering(); b_debug_menu_rendering = false;}
    

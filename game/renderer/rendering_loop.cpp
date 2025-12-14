@@ -127,7 +127,7 @@ glfwSetWindowSize(window, winWidth, winHeight);
 
         // input
         processInput(window);
-        if(b_pause_menu_rendering == false) mouse_callback(window);
+        if(!b_pause_menu_rendering && !b_death_screen && !b_match_over) mouse_callback(window);
         player.updatePosition(frameDeltaTime);
 
 
@@ -520,7 +520,7 @@ void textureLoad(unsigned int* texture, const char* path)
 void processInput(GLFWwindow *window)
 {
     
-    if(b_pause_menu_rendering == false && b_chat_rendering == false && b_death_screen == false){
+    if(b_pause_menu_rendering == false && b_chat_rendering == false && b_death_screen == false && !b_match_over){
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
             player.processMovement(FORWARD, frameDeltaTime);
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
