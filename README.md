@@ -16,9 +16,11 @@ RT-Shooter è un gioco FPS multiplayer 1v1 che può essere giocato direttamente 
 2. [**Tecnologie Utilizzate**](#tech-stack)
 3. [**Setup del Progetto**](#setup-del-progetto)
 4. [**Game engine**](#game-engine)
-5. [**Outline del Progetto**](#outline-del-progetto)
-6. [**Descrizione dei componenti principali**](#descrizione-dei-componenti-principali)
-7. [**Sequence Diagram**](#sequence-diagram)
+5. [**Troubleshooting**](#troubleshooting)
+6. [**Outline del Progetto**](#outline-del-progetto)
+7. [**Descrizione dei componenti principali**](#descrizione-dei-componenti-principali)
+8. [**Sequence Diagram**](#sequence-diagram)
+9. [**Autori**](#autori)
 ---
 ## Caratteristiche principali
 
@@ -47,6 +49,20 @@ RT-Shooter è un gioco FPS multiplayer 1v1 che può essere giocato direttamente 
 
 
 ![Shooter](./assets/sparatutto.png)
+
+---
+
+## Gameplay Features
+
+RT-Shooter implementa una serie di feature avanzate per garantire un'esperienza di gioco fluida e competitiva:
+
+- **Sincronizzazione Kill/Death Stats**: I contatori di kill e death sono sincronizzati in tempo reale tra i due client tramite Socket.IO, garantendo che entrambi i giocatori vedano sempre le stesse statistiche.
+- **Win Condition Dinamica**: Il primo giocatore a raggiungere 10 kill vince la partita. La schermata di fine match mostra il vincitore con countdown di 15 secondi prima del ritorno alla lobby.
+- **Spawnpoint Intelligente**: Quando un giocatore respawna, viene posizionato al punto di spawn più lontano dal suo killer, riducendo il rischio di spawnkill.
+- **Chat Testuale**: Comunicazione testuale in tempo reale tra i due giocatori durante la partita.
+- **Sistema di Feedback Visivo**: Mirino dinamico che cambia colore al hit, con feedback visivo e sonoro (hitmarker) per i colpi andati a segno.
+- **Audio Integrato**: Effetti sonori per il danno ricevuto, kill e morte, con audio vocale peer-to-peer tramite WebRTC.
+- **Telecamera Orientata su Respawn**: Alla morte e rispawn, la telecamera viene riorientata correttamente verso il punto di spawn scelto.
 
 ---
 
@@ -102,6 +118,34 @@ App React parte sulla porta 3000
 cd ../game-ui
 npm start
 ```
+
+# Troubleshooting
+
+Ecco alcuni problemi comuni e le relative soluzioni:
+
+### **Microfono non funziona durante il gioco**
+- **Causa**: Il browser non ha i permessi per accedere al microfono.
+- **Soluzione**: Assicurati che il browser abbia il permesso di accedere al microfono. Controlla le impostazioni di privacy del browser e consenti l'accesso al microfono per il sito.
+- Se il permesso era già stato negato, cancella i dati del sito e ricarica la pagina.
+
+### **WebRTC non riesce a connettersi (niente audio vocale)**
+- **Causa**: Il server STUN non è raggiungibile o c'è un problema con la connessione di rete.
+- **Soluzione**: Verifica che la tua connessione internet funzioni correttamente. Se il problema persiste, potrebbe essere un problema di firewall o NAT. Prova a connetterti da una rete diversa.
+
+### **La stanza non si crea o la lista stanze non si aggiorna**
+- **Causa**: Il dispatcher non è in esecuzione o c'è un problema di connessione al server.
+- **Soluzione**: Assicurati che il dispatcher sia avviato con `node ./server.js` nella cartella `dispatcher`. Verifica che la porta 8080 non sia bloccata dal firewall.
+
+### **WASM non carica (errore "test.js not found" o simile)**
+- **Causa**: I file compilati WASM non sono presenti nella cartella `public`.
+- **Soluzione**: Naviga nella cartella `game` ed esegui `make` per ricompilare il motore di gioco. I file `test.js`, `test.wasm` e `test.data` verranno generati automaticamente in `game-ui/public`.
+
+### **Errore di versione Node.js durante l'avvio**
+- **Causa**: Versione di Node.js non compatibile (inferiore a 18).
+- **Soluzione**: Aggiorna Node.js alla versione 18 o superiore dal [sito ufficiale](https://nodejs.org/).
+
+
+---
 
 # Game engine
 
@@ -284,6 +328,39 @@ Ogni schermata ha un proprio componente **React** (**.jsx**) dedicato che viene 
 - **createRoom()**: Crea una nuova stanza inviando le informazioni al server. Se il nome della stanza è vuoto, mostra un errore.
 - **useEffect()**: Gestisce l'effetto di aggiornamento dell'immagine di anteprima del livello e la configurazione della creazione della stanza. Ascolta l'evento "room_created" dal server per reindirizzare l'utente alla schermata di gioco.
 
+### `Game.jsx`
+
+**Funzione**: Questo componente rappresenta la schermata principale di gioco. Gestisce il caricamento del motore di gioco WebAssembly compilato in C++, stabilisce la comunicazione con il room server tramite Socket\.IO, configura la connessione WebRTC peer-to-peer per l'audio vocale tra i due giocatori, e renderizza il canvas dove avviene il gameplay.
+
+**Stato**:
+- **gameSocket**: Istanza della socket\.io per comunicare con il room server sulla porta dedicata.
+- **peerConnection**: Oggetto RTCPeerConnection che gestisce la connessione P2P per l'audio vocale.
+- **localStream**: Stream audio locale del microfono del giocatore.
+- **isCaller**: Booleano che indica se il giocatore è l'initiator della chiamata WebRTC (primo a connettersi).
+- **callStarted**: Flag che evita molteplici avvii della chiamata audio.
+- **setupDone**: Indica se il modulo WASM è stato correttamente inizializzato.
+- **remoteAudio**: Elemento HTML audio per riprodurre il flusso audio remoto.
+
+**Props ricevute**:
+- **roomID**: Identificativo univoco della stanza di gioco.
+- **port**: Porta su cui il room server è in ascolto.
+- **nickname**: Nickname del giocatore da trasmettere al C++ e al room server.
+- **setScreen**: Funzione callback per navigare tra le schermate (es. ritorno alla lobby).
+
+**Funzioni principali**:
+- **startAudio()**: Attiva il microfono del giocatore con le configurazioni audio specifiche (eliminazione dell'echo, controllo di guadagno automatico disabilitato, latenza bassa).
+- **createPeerConnection()**: Crea e configura l'oggetto RTCPeerConnection. Aggiunge le tracce audio locali, gestisce i candidati ICE e configura il gestore per ricevere le tracce audio remote.
+- **startAudioCall()**: Avvia la chiamata WebRTC. Il primo giocatore a connettersi diventa il "caller" e crea un'offerta SDP che invia all'altro giocatore tramite il room server.
+- **sendSignal(type, data)**: Funzione utility che invia segnali WebRTC (offer, answer, candidate) tramite Socket\.IO al room server.
+- **useEffect()**: Inizializza il modulo WASM, carica lo script test.js, configura i listener Socket\.IO per gli eventi di signaling WebRTC (offer, answer, candidate), gestisce il conteggio dei giocatori connessi per avviare automaticamente la chiamata audio quando entrambi i giocatori sono pronti, e implementa la logica di cleanup alla disconnessione.
+- **Gestori degli eventi Socket\.IO**:
+  - `connect`: Stabilisce la connessione iniziale, carica il modulo WASM e registra il socket nelle callback C++.
+  - `offer`: Riceve l'offerta SDP da un altro giocatore e genera un'answer SDP.
+  - `answer`: Riceve la risposta SDP dal ricevente della chiamata.
+  - `candidate`: Gestisce lo scambio di candidati ICE per trovare il percorso di rete migliore.
+  - `playerCount`: Quando entrambi i giocatori sono connessi, avvia automaticamente la chiamata audio.
+  - `disconnect`: Gestisce la disconnessione dal room server.
+
 ## `server.js`  (Dispatcher) 
 
 **Funzione**  
@@ -393,5 +470,16 @@ Al momento dell’avvio stampa nel terminale un messaggio di conferma nel format
  
  
 ![diagrammaFunzionamento](game-ui/public/assets/Sequence_diagram.jpg)
+
+---
+
+# Autori
+
+RT-Shooter è stato sviluppato da:
+
+- **Francesco Prisco** - [@Azzerot](https://github.com/Azzerot)
+- **Francesco Gaetano Niutta** - [@fniutta](https://github.com/fniutta)
+
+Per contributi, segnalazioni di bug o suggerimenti, puoi aprire un'issue o una pull request nella [repository ufficiale](https://github.com/WebRTC-Projects-Unina/RT-Shooter).
 
 

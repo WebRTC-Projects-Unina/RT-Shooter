@@ -106,8 +106,8 @@ let script = document.createElement("script");
     window.Module.callMain([]);
   }
   if(gameSocket === null){
-  //gameSocket = io(`http://${window.location.hostname}:${port}`, {
-  gameSocket = io(`wss://gameserver${port}.${window.location.hostname}`, {
+  gameSocket = io(`http://${window.location.hostname}:${port}`, {
+  //gameSocket = io(`wss://gameserver${port}.${window.location.hostname}`, {
                   query: { roomID, nickname }
                 });
 

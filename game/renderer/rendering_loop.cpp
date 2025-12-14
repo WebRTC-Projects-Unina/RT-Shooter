@@ -127,7 +127,7 @@ glfwSetWindowSize(window, winWidth, winHeight);
 
         // input
         processInput(window);
-        if(b_pause_menu_rendering == false) mouse_callback(window);
+        if(!b_pause_menu_rendering && !b_death_screen && !b_match_over) mouse_callback(window);
         player.updatePosition(frameDeltaTime);
 
 
@@ -402,19 +402,21 @@ glfwSetWindowSize(window, winWidth, winHeight);
         glBindVertexArray(floorVAO);
         glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 1); 
         
-        
-        setPlayerDistance(glm::distance(player.getPosition(), enemyPlayer.getPosition()));
-        model = glm::translate(glm::mat4(1.0f), glm::vec3(enemyPlayer.getPosition().x, enemyPlayer.getPosition().y - 0.5,enemyPlayer.getPosition().z)); 
+        // Renderizza il nemico SOLO se è vivo
+        if(b_enemy_alive) {
+            setPlayerDistance(glm::distance(player.getPosition(), enemyPlayer.getPosition()));
+            model = glm::translate(glm::mat4(1.0f), glm::vec3(enemyPlayer.getPosition().x, enemyPlayer.getPosition().y - 0.5,enemyPlayer.getPosition().z)); 
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, enemy_diffTexture);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, enemy_diffTexture);
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &model[0][0]);
-        model = glm::translate(glm::mat4(1.0f), glm::vec3(enemyPlayer.getPosition().x, enemyPlayer.getPosition().y - 0.5,enemyPlayer.getPosition().z)); 
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, enemy_diffTexture);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, enemy_diffTexture);
+            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &model[0][0]);
+            model = glm::translate(glm::mat4(1.0f), glm::vec3(enemyPlayer.getPosition().x, enemyPlayer.getPosition().y - 0.5,enemyPlayer.getPosition().z)); 
 
-        glBindVertexArray(playerVAO);
-        glDrawArraysInstanced(GL_TRIANGLES, 0, (sizeof(playerMesh)/sizeof(float))/8, 1); 
+            glBindVertexArray(playerVAO);
+            glDrawArraysInstanced(GL_TRIANGLES, 0, (sizeof(playerMesh)/sizeof(float))/8, 1);
+        } 
 
       
 
@@ -432,11 +434,32 @@ glfwSetWindowSize(window, winWidth, winHeight);
             
             // Se sono passati 5 secondi, respawna
             if(timeSinceDeath >= respawnDelay) {
+                // Scegli lo spawn point più lontano dal nemico (killer)
+                glm::vec3 enemyPos = enemyPlayer.getPosition();
+                float distA = glm::distance(enemyPos, spawnPoints[0]);
+                float distB = glm::distance(enemyPos, spawnPoints[1]);
+                int chosenIndex = distA >= distB ? 0 : 1;
+                glm::vec3 chosenSpawn = spawnPoints[chosenIndex];
+
+                // Respawn al punto scelto
+                player.setPosition(chosenSpawn);
+                player.setVelocity(glm::vec3(0.0f));
+                player.camera.Position = glm::vec3(chosenSpawn.x, chosenSpawn.y + 0.2f, chosenSpawn.z);
+                // Orienta la camera per spawn: 0 guarda 180° rispetto al default, 1 guarda 45° a sinistra
+                if (chosenIndex == 0) {
+                    player.camera.Yaw = 90.0f;   // 180° rispetto a -90°
+                } else {
+                    player.camera.Yaw = -135.0f; // 45° a sinistra rispetto a -90°
+                }
+                player.camera.Pitch = PITCH;  // 0.0f
+                player.camera.ProcessMouseMovement(0.0f, 0.0f, false); // aggiorna i vettori senza modificare yaw/pitch
+                player.setDirection(player.camera.Front);
+
                 playerHP = 100.0f;
                 b_death_screen = false;
                 deathTime = 0.0f;
                 killedByNickname = "";
-                std::cout << "Respawned! HP: " << playerHP << std::endl;
+                std::cout << "Respawned at far spawn! HP: " << playerHP << std::endl;
             }
             return;  // Non renderizzare il resto della scena durante la morte
         }
@@ -497,7 +520,7 @@ void textureLoad(unsigned int* texture, const char* path)
 void processInput(GLFWwindow *window)
 {
     
-    if(b_pause_menu_rendering == false && b_chat_rendering == false && b_death_screen == false){
+    if(b_pause_menu_rendering == false && b_chat_rendering == false && b_death_screen == false && !b_match_over){
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
             player.processMovement(FORWARD, frameDeltaTime);
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -535,7 +558,9 @@ void processInput(GLFWwindow *window)
         b_debug_menu_rendering = b_debug_menu_rendering ? false : true; 
     }
 
-    if(glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) b_lastPressed_KEY_M = GLFW_PRESS;
+    if(glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS && !b_chat_rendering) {
+        b_lastPressed_KEY_M = GLFW_PRESS;
+    }
     if (b_lastPressed_KEY_M == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_M) != GLFW_PRESS)
     {
         b_lastPressed_KEY_M = 0;
@@ -608,6 +633,11 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 }
 
 void shoot_raycast() {
+    // Se il nemico è morto, non puoi sparare su di lui
+    if (!b_enemy_alive) {
+        return;
+    }
+    
     // 1. Ottieni la posizione e direzione dalla camera del giocatore
     glm::vec3 shooterPos = player.camera.Position;
     glm::vec3 shootDirection = player.camera.Front;  // Front è la direzione in cui guarda la camera
@@ -667,6 +697,10 @@ void shoot_raycast() {
 
             // 7. Invia l'evento di sparo al server con i dati
            sendShootEvent(shooterPos, shootDirection, damage, glm::distance(player.getPosition(),enemyPlayer.getPosition()));
+           
+           // 8. Riproduci suono di hit
+           playHitmarkerSound();
+               hitFeedbackTimer = 0.2f; // attiva flash visivo del mirino per 200 ms
 
             damage < 100 ?  std::cout << "bodyhit! Damage: " << damage << std::endl 
                          :  std::cout << "HEADSHOT! Damage: " << damage << std::endl;
