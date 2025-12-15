@@ -90,7 +90,21 @@ socket.on("join_room", ({ roomID, nickname, password }) => {
     newRoom.port = port;
 
     // --- avvia room server ---
-    startRoomServer(port, newRoom.id);
+    let mapNumber = 0;
+    switch ( newRoom.level) {
+    case "Level 1":
+      mapNumber = 1;
+      break;
+    case "Level 2":
+      mapNumber = 2;
+      break;
+    case "Level 3":
+      mapNumber = 3;
+      break;
+    default:
+      mapNumber = -1; // Se non c'è selezione, nessuna immagine
+  }
+    startRoomServer(port, newRoom.id, mapNumber);
 
     // --- rimanda al client info stanza ---
     socket.emit("room_created", { roomID: newRoom.id, port });
@@ -122,8 +136,8 @@ function getFreePort(start = 9000) {
 
 const { spawn } = require("child_process");
 let buffer = '';
-function startRoomServer(port, roomID) {
-  const child = spawn("node", ["roomServer.js", port, roomID], {
+function startRoomServer(port, roomID, map) {
+  const child = spawn("node", ["roomServer.js", port, roomID, map], {
     stdio: ['pipe', 'pipe', 'pipe']
   });
   

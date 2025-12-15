@@ -268,6 +268,11 @@ let script = document.createElement("script");
       
          console.error(err); 
       }
+      const gl = window.Module.GL.getContext(canvas);
+    if (gl) {
+        gl.getExtension('WEBGL_lose_context').loseContext();
+        console.log("JavaScript: Contesto WebGL perso.");
+    }
       document.body.removeChild(script);
     };
 

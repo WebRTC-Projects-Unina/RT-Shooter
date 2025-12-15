@@ -53,6 +53,10 @@ void load_map(const std::string& path){
                 translation.y = ((float)j)+0.5;
                 translations[translations_index++] = translation;
             }
+            else if (map[i+(j*map_width)] == 2 && spawnPointNumber < 30) {
+                spawnPoints[spawnPointNumber] = glm::vec3((float)i, .0f, (float)j);
+                spawnPointNumber++;
+            }
         }
     }
 

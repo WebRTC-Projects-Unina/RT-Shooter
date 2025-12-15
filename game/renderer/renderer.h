@@ -29,7 +29,8 @@
     #define WINDOW_HEIGHT_INIT 720
     #define CAMERA_SPEED 4.0f
 
-
+    inline bool b_setupDone = false;
+    inline bool b_mapLoaded = false;
     inline int winWidth = WINDOW_WIDTH_INIT, winHeight = WINDOW_HEIGHT_INIT;
 
     inline std::vector<int> map;
@@ -59,12 +60,10 @@
 
 
     inline ClientPlayer player(glm::vec3(3.0f, 3.0f, 3.0f), glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, -1.0f)); 
-    inline Player enemyPlayer(glm::vec3(3.0f, 0.0f, 3.0f), glm::vec3(0), glm::vec3(1.f, 0, 0));
+    inline RemotePlayer enemyPlayer(glm::vec3(-2.0f, 300.0f, -2.0f), glm::vec3(0), glm::vec3(1.f, 0, 0));
     // Spawn points forniti dall'utente (posizioni testate in mappa)
-    inline glm::vec3 spawnPoints[2] = {
-        glm::vec3(2.517f, 0.0f, 1.980f),   // Spawn A (vicino area iniziale)
-        glm::vec3(19.260f, 0.0f, 17.605f)  // Spawn B (lato opposto)
-    };
+    inline glm::vec3 spawnPoints[30];
+    inline int spawnPointNumber = 0;
 
 
 
@@ -80,7 +79,9 @@
     void load_map(const std::string& path);
     
     inline glm::vec2 translations[10000];
+
     inline glm::vec2 playerTranslations[2];
     inline int translations_index = 0;
+    inline int mapNumber = 0;
 
 #endif

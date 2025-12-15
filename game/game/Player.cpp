@@ -84,7 +84,7 @@ void ClientPlayer::processMovement(Movement_Direction relativeDirection, float d
         m_velocity += camera.Right * accelleration * deltaTime;
         b_isMoving = true;
     }
-    else if (relativeDirection == JUMP && m_position.y <= 0.3)
+    else if (relativeDirection == JUMP && m_position.y <= 0.05)
         m_velocity.y = jump_velocity;
 }
 

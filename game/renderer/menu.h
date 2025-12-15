@@ -41,7 +41,6 @@ float matchEndTime = 0.0f;      // tempo in cui è terminata la partita
 float matchEndDuration = 15.0f; // durata della schermata finale prima del ritorno alla lobby
 bool b_match_end_exit_sent = false; // evita chiamate multiple a exitGame
 
-// Forward declarations per la logica di fine partita
 void TriggerMatchEnd(bool playerWon);
 void CheckWinCondition();
 
@@ -79,6 +78,9 @@ void OnEnemyJoined(const char* nickname) {
     enemyNickname = std::string(nickname);
 }
 }
+
+
+
 
 // Callback quando il nemico spara (calcola il danno lato client)
 extern "C" {
@@ -548,6 +550,7 @@ void pause_menu_rendering() {
             ImGui::SetCursorPosY(offsetY + buttonHeight);
 
              if (ImGui::Button("Ritorna alla selezione delle Stanze", ImVec2(buttonWidth, buttonHeight))){
+
                 exitGame();
             }
             
