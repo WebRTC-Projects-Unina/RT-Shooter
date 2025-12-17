@@ -104,7 +104,7 @@ function App() {
       {/* SETTINGS */}
       {screen === "settings" && (
         <div className="screen">
-          <h2>Settings (placeholder)</h2>
+          <h2>Settings (to be implemented!)</h2>
           <button onClick={() => setScreen("main-menu")}>Back</button>
         </div>
       )}

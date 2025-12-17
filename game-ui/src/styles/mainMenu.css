@@ -44,6 +44,13 @@
   box-shadow: 0 6px 16px rgba(0,0,0,0.4);
 }
 
+.menu-buttons button:disabled {
+  background: #888;
+  color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .main-logo {
   width: 100%;
 
