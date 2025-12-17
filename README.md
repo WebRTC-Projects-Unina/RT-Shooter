@@ -37,7 +37,7 @@ RT-Shooter è un gioco FPS multiplayer 1v1 che può essere giocato direttamente 
 ### Schermata principale
 
 <div style="display: flex; gap: 10px;">
-  <img src="./game-ui/public/assets/schermata1.jpg" alt="Home screen 1" width="45%"/>
+  <img src="./game-ui/public/assets/schermata1.png" alt="Home screen 1" width="45%"/>
   <img src="./game-ui/public/assets/schermata2.png" alt="Home screen 2" width="45%"/>
 </div>
 
