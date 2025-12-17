@@ -84,7 +84,7 @@ void ClientPlayer::processMovement(Movement_Direction relativeDirection, float d
         m_velocity += camera.Right * accelleration * deltaTime;
         b_isMoving = true;
     }
-    else if (relativeDirection == JUMP && m_position.y <= 0.3)
+    else if (relativeDirection == JUMP && m_position.y <= 0.05)
         m_velocity.y = jump_velocity;
 }
 
@@ -141,7 +141,7 @@ void ClientPlayer::checkCollission(float deltaTime)
     if(map.empty()) return;
     {
         glm::vec2 roundedPosition((int)(m_position.x + (m_velocity.x*deltaTime)), ((int)m_position.z));
-        if(map[roundedPosition.x+(((roundedPosition.y))*map_width)]) {
+        if(map[roundedPosition.x+(((roundedPosition.y))*map_width)] == 1) {
             m_velocity.x = 0;
             if (m_position.x - ((int)m_position.x) > 0.998f) m_position.x = ((int)m_position.x) + 0.998f;
             else if (m_position.x - ((int)m_position.x) < 0.001f) m_position.x = ((int)m_position.x) + 0.001f;
@@ -150,7 +150,7 @@ void ClientPlayer::checkCollission(float deltaTime)
     }
 
     glm::vec2 roundedPosition((int)m_position.x, (int)(m_position.z + (m_velocity.z*deltaTime)));
-    if(map[roundedPosition.x+((roundedPosition.y)*map_width)]){
+    if(map[roundedPosition.x+((roundedPosition.y)*map_width)] == 1){
         m_velocity.z = 0;
         if (m_position.z - ((int)m_position.z) > 0.998f) m_position.z = ((int)m_position.z) + 0.998f;
         else if (m_position.z - ((int)m_position.z) < 0.001f) m_position.z = ((int)m_position.z) + 0.001f;

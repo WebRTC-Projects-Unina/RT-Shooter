@@ -11,7 +11,7 @@
 #include <gtc/matrix_transform.hpp>
 #include <gtc/type_ptr.hpp>
 #include "../game/Player.h"
-
+#include "renderer.h"
 
 
 
@@ -28,17 +28,23 @@
 
 extern "C" {
 EMSCRIPTEN_KEEPALIVE
-void OnMessageFromJS(const char* msg) {
+void OnEnemyUpdate(const char* msg) {
     std::string json(msg);
     glm::vec3 v;
+    float yaw; 
 
-    // Parsing (rozzo ma funziona per il demo)
     sscanf(json.c_str(),
-           "{ \"x\": %f , \"y\": %f , \"z\": %f }",
-           &v.x, &v.y, &v.z);
+           "{ \"x\": %f , \"y\": %f , \"z\": %f , \"yaw\": %f }",
+           &v.x, &v.y, &v.z, &yaw);
     enemyPlayer.setPosition(v);
+    enemyPlayer.Yaw = yaw;
 }
 }
+
+EM_JS(void, sendPosizione, (const char* json), {
+    if(!Module.socket) return;
+    Module.socket.emit("player_update", JSON.parse(UTF8ToString(json)));
+});
 
 
 extern "C" {
@@ -59,7 +65,7 @@ EM_JS(void, RegisterSocketIOCallback, (), {
         
         const json = JSON.stringify(pos);
         Module.ccall(
-            "OnMessageFromJS", // nome funzione C++
+            "OnEnemyUpdate", // nome funzione C++
             null,              // ritorno void
             ["string"],        // tipo argomento
             [json]           
@@ -90,6 +96,12 @@ EM_JS(void, RegisterSocketIOCallback, (), {
     Module.socket.on("enemy_died", (data) => {
         Module.ccall("OnEnemyDied", null, [], []);
     });
+
+    Module.socket.on("map_load", (data) => {
+        Module.ccall("OnMapLoad", null, ["number"], [data.map]);
+    });
+
+
     
     // Quando il nemico ha ucciso qualcuno (incremente le sue kill)
     Module.socket.on("enemy_killed", (data) => {
@@ -116,12 +128,16 @@ EM_JS(void, RegisterSocketIOCallback, (), {
 
 
 
-EM_JS(void, sendPosizione, (const char* json), {
-    // jsSocket deve essere la tua WebSocket aperta in JavaScript
-    if(!Module.socket) return;
-    Module.socket.emit("player_update", JSON.parse(UTF8ToString(json)));
-});
 
+extern "C" {
+EMSCRIPTEN_KEEPALIVE
+void OnMapLoad(float mapN) {
+    mapNumber = (int)mapN;
+
+    std::cout << "MapNumer Ricevuto: " << mapNumber << std::endl;
+
+}
+}
 
 EM_JS(void, setPlayerDistance, (float distanza), {
     //(vedere screen desmos)
@@ -137,11 +153,11 @@ EM_JS(void, exitGame, (), {
     Module.exitGame();
 });
 
-void sendVec3(glm::vec3 v) {
+void sendVec3(glm::vec3 v, float yaw) {
 
 
     std::stringstream ss;
-    ss << "{ \"x\": " << v.x << ", \"y\": " << v.y << ", \"z\": " << v.z << " }";
+    ss << "{ \"x\": " << v.x << ", \"y\": " << v.y << ", \"z\": " << v.z << ", \"yaw\": " << yaw << " }";
     std::string json = ss.str();
 
     sendPosizione(json.c_str());
@@ -154,6 +170,7 @@ EM_JS(void, sendShootData, (const char* json), {
 
 void sendShootEvent(glm::vec3 position, glm::vec3 direction, float damage, float distance) {
     std::stringstream ss;
+    //Ad ora non vengono usati questi parametri, ma utili per anticheat server side naive
     ss << "{ "
        << "\"pos\": { \"x\": " << position.x << ", \"y\": " << position.y << ", \"z\": " << position.z << " }, "
        << "\"dir\": { \"x\": " << direction.x << ", \"y\": " << direction.y << ", \"z\": " << direction.z << " }, "

@@ -22,11 +22,11 @@ class Player {
 public:
     inline static float gravity = 9.81;
     inline static float jump_velocity = 4;
-    inline static float max_velocity = 4;
+    inline static float max_velocity = 3;
     inline static float max_vertical_velcity = 4;
-    inline static float walking_friction = 80;
+    inline static float walking_friction = 70;
     inline static float aereal_friction = 5;
-    inline static float accelleration = 100;
+    inline static float accelleration = 60;
     inline static float max_hp = 100;
     inline static float base_hp = 80;
 
@@ -90,6 +90,8 @@ private:
 };
 
 class RemotePlayer : public Player {
-    
+    public: 
+    float Yaw = 0;
+    using Player::Player;
 };
 #endif

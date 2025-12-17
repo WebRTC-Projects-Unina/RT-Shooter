@@ -1,5 +1,4 @@
 
-inline bool b_setupDone = false;
 
 
 inline float cube[] = {

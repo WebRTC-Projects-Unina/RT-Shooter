@@ -3,6 +3,7 @@ const { Server } = require("socket.io");
 
 const port = process.argv[2];
 const roomID = process.argv[3];
+const map = process.argv[4];
 
 const server = http.createServer();
 
@@ -32,6 +33,9 @@ io.on("connection", (socket) => {
   console.log(`[ROOM ${roomID}] Connected players: ${connectedPlayers}`);
   
   socket.on("join_game", (player) => {
+    socket.emit("map_load", {map: map});
+    console.log(`[ROOM ${roomID}] Level Selected:`, map);
+
     console.log(`[ROOM ${roomID}] Player joined:`, player);
     // Salva il nickname del player
     socket.nickname = player.nickname || player.name || "Unknown";
@@ -54,6 +58,7 @@ io.on("connection", (socket) => {
     console.log(`[ROOM ${roomID}] Broadcasting new player ${socket.nickname} to others`);
     
     io.emit("playerCount", connectedPlayers);
+
   });
 
   socket.on("player_shoot", (data) => {

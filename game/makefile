@@ -28,7 +28,9 @@ CMD = emcc main.cpp \
     -s ASYNCIFY \
     -s INVOKE_RUN=0 \
     -s EXIT_RUNTIME=1 \
-    -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap','callMain'] \
+    -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap','callMain','GL'] \
+    -sASSERTIONS \
+    -sNO_DISABLE_EXCEPTION_CATCHING \
     --preload-file res \
     -O3 \
     -o ..\\game-ui\\public\\test.js

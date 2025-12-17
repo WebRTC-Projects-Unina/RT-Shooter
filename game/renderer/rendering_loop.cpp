@@ -2,7 +2,7 @@
 
 #include <GL/gl.h>
 #include <GLES3/gl3.h>
-
+#include <cmath>
 #include <emscripten/html5.h>
 #include <emscripten/val.h>
 #include <GLFW/glfw3.h> 
@@ -120,7 +120,7 @@ glfwSetWindowSize(window, winWidth, winHeight);
         //mando pacchetti 64 tick/sec (Valve assumimi -> what you see is what you get)
         lastPosUpdateDeltaTime = nowFrame - lastPosUpdate;
         if(lastPosUpdateDeltaTime > 0.015625) {
-            emscripten_async_call([](void*) { sendVec3(player.getPosition()); }, nullptr, 0);
+            emscripten_async_call([](void*) { sendVec3(player.getPosition(), -glm::radians(player.camera.Yaw + 180)); }, nullptr, 0);
             lastPosUpdate = nowFrame;
         }
 
@@ -145,18 +145,41 @@ glfwSetWindowSize(window, winWidth, winHeight);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glClearColor(backgroundColor.x, backgroundColor.y, backgroundColor.z, 1.0f);
 
-        
+      
         
         if(!b_setupDone){
             
             RegisterSocketIOCallback(); //impsota callback per ricezione socket
-
+            while(mapNumber == 0){
+                emscripten_sleep(100);
+            }
+            
+       
+                std::cout << "Mappa " << mapNumber << " caricata!" << std::endl;
+                std::string path = "./res/maps/map";
+                path += std::to_string(mapNumber);
+                path += ".json";
+                std::cout << path << std::endl;
+                load_map(path); 
+                b_mapLoaded = true;
+        
             if (glfwRawMouseMotionSupported()) glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
             glfwSetScrollCallback(window, scroll_callback);
 
-            
-            load_map("./res/maps/test.json");
+          
+           
 
+            
+            glm::vec3 chosenSpawn = spawnPoints[(int)(oldFrame*1000) % spawnPointNumber]; //sceglie un spawn random
+            player.setPosition(chosenSpawn);
+            player.setVelocity(glm::vec3(0.0f));
+            player.camera.Position = glm::vec3(chosenSpawn.x, chosenSpawn.y + 0.2f, chosenSpawn.z);
+            glm::vec3 direction_vector = (glm::vec3(map_width/2, .0f, map_height/2)) - chosenSpawn;
+            float yaw_radians = std::atan2(direction_vector.x, direction_vector.z);
+            player.camera.Yaw =  glm::degrees(yaw_radians);
+            player.camera.Pitch = .0f; 
+            player.camera.ProcessMouseMovement(0.0f, 0.0f, false); // aggiorna i vettori senza modificare yaw/pitch
+            player.setDirection(player.camera.Front);
 
             //texture
             textureLoad(&wall_diffTexture, "./res/textures/stone_brick_wall/stone_brick_wall_diff.jpg");
@@ -298,6 +321,8 @@ glfwSetWindowSize(window, winWidth, winHeight);
         //3d
 
        
+      
+        
  
        
 
@@ -406,13 +431,13 @@ glfwSetWindowSize(window, winWidth, winHeight);
         if(b_enemy_alive) {
             setPlayerDistance(glm::distance(player.getPosition(), enemyPlayer.getPosition()));
             model = glm::translate(glm::mat4(1.0f), glm::vec3(enemyPlayer.getPosition().x, enemyPlayer.getPosition().y - 0.5,enemyPlayer.getPosition().z)); 
-
+            model = glm::rotate(model, enemyPlayer.Yaw ,glm::vec3(0.0f, 1.0f, 0.0f));
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, enemy_diffTexture);
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, enemy_diffTexture);
             glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &model[0][0]);
-            model = glm::translate(glm::mat4(1.0f), glm::vec3(enemyPlayer.getPosition().x, enemyPlayer.getPosition().y - 0.5,enemyPlayer.getPosition().z)); 
+
 
             glBindVertexArray(playerVAO);
             glDrawArraysInstanced(GL_TRIANGLES, 0, (sizeof(playerMesh)/sizeof(float))/8, 1);
@@ -436,22 +461,25 @@ glfwSetWindowSize(window, winWidth, winHeight);
             if(timeSinceDeath >= respawnDelay) {
                 // Scegli lo spawn point più lontano dal nemico (killer)
                 glm::vec3 enemyPos = enemyPlayer.getPosition();
-                float distA = glm::distance(enemyPos, spawnPoints[0]);
-                float distB = glm::distance(enemyPos, spawnPoints[1]);
-                int chosenIndex = distA >= distB ? 0 : 1;
+                float maxDist = INT_MIN;
+                int chosenIndex = 0;
+                for (int i = 0; i < spawnPointNumber; i++){
+                    float tempDist = glm::distance(enemyPos, spawnPoints[i]) + ((int)(oldFrame*1000)%1000)/200;
+                    maxDist = tempDist > maxDist ? tempDist : maxDist;
+                    chosenIndex = tempDist == maxDist ? i : chosenIndex;
+                }
                 glm::vec3 chosenSpawn = spawnPoints[chosenIndex];
 
                 // Respawn al punto scelto
                 player.setPosition(chosenSpawn);
                 player.setVelocity(glm::vec3(0.0f));
                 player.camera.Position = glm::vec3(chosenSpawn.x, chosenSpawn.y + 0.2f, chosenSpawn.z);
-                // Orienta la camera per spawn: 0 guarda 180° rispetto al default, 1 guarda 45° a sinistra
-                if (chosenIndex == 0) {
-                    player.camera.Yaw = 90.0f;   // 180° rispetto a -90°
-                } else {
-                    player.camera.Yaw = -135.0f; // 45° a sinistra rispetto a -90°
-                }
-                player.camera.Pitch = PITCH;  // 0.0f
+                
+
+                glm::vec3 direction_vector = (glm::vec3(map_width/2, .0f, map_height/2)) - chosenSpawn;
+                float yaw_radians = std::atan2(direction_vector.x, direction_vector.z);
+                player.camera.Yaw =  glm::degrees(yaw_radians);
+                player.camera.Pitch = .0f; 
                 player.camera.ProcessMouseMovement(0.0f, 0.0f, false); // aggiorna i vettori senza modificare yaw/pitch
                 player.setDirection(player.camera.Front);
 
@@ -588,7 +616,7 @@ void processInput(GLFWwindow *window)
         }
     }
 
-    // Tasto TAB per mostrare lo scoreboard (hold to show)
+    // Tasto TAB per mostrare lo scoreboard 
     if(glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS) {
         b_scoreboard_rendering = true;
     } else {
@@ -638,7 +666,6 @@ void shoot_raycast() {
         return;
     }
     
-    // 1. Ottieni la posizione e direzione dalla camera del giocatore
     glm::vec3 shooterPos = player.camera.Position;
     glm::vec3 shootDirection = player.camera.Front;  // Front è la direzione in cui guarda la camera
     Collider* colliders[2];
@@ -655,7 +682,7 @@ void shoot_raycast() {
 
     for(int colliderIndex = 0; colliderIndex < 2; colliderIndex++)
     { 
-        // 3. Ray-AABB intersection (algoritmo di Slabs)
+        // Ray-AABB intersection (algoritmo di Slabs)
         float tMin = 0.0f;
         float tMax = 100.0f;  // Distanza massima del raycast
 
@@ -683,22 +710,18 @@ void shoot_raycast() {
             }
         }
 
-        // 4. Verifica se c'è stata un'intersezione valida
         bool isHit = (tMin <= tMax) && (tMax >= 0.0f) && (tMin <= 100.0f);
 
         if (isHit) {
 
 
 
-            // 6. Calcola il danno base
             float damage = colliders[colliderIndex]->m_type == 0 ? 100 : 40;
 
 
 
-            // 7. Invia l'evento di sparo al server con i dati
            sendShootEvent(shooterPos, shootDirection, damage, glm::distance(player.getPosition(),enemyPlayer.getPosition()));
            
-           // 8. Riproduci suono di hit
            playHitmarkerSound();
                hitFeedbackTimer = 0.2f; // attiva flash visivo del mirino per 200 ms
 
