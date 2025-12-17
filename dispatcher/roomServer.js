@@ -127,8 +127,11 @@ io.on("connection", (socket) => {
     });
 
     socket.on("offer", (message) => {
-        console.log(`aaaaaa`);
         socket.broadcast.emit("offer", message);
+    });
+
+    socket.on("hangup", (message) => {
+        socket.broadcast.emit("hangup", message);
     });
 
     socket.on("answer", (message) => {
@@ -137,7 +140,6 @@ io.on("connection", (socket) => {
     });
     socket.on("candidate", (data) => {
       try{
-        console.log(`cc`);
         socket.broadcast.emit("candidate", data);
         }
         catch(err){

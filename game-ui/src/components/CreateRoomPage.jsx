@@ -18,13 +18,13 @@ function CreateRoomPage({ nickname, onCancel, setScreen, setGameInfo}) {
   function updateLevelImage(selectedLevel) {
   switch (selectedLevel) {
     case "Level 1":
-      setLevelImage("1.jpg");
+      setLevelImage("mappa1.png");
       break;
     case "Level 2":
-      setLevelImage("2.jpg"); 
+      setLevelImage("mappa2.png"); 
       break;
     case "Level 3":
-      setLevelImage("3.jpg");
+      setLevelImage("mappa3.png");
       break;
     default:
       setLevelImage(""); // Se non c'è selezione, nessuna immagine

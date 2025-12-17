@@ -43,6 +43,46 @@ async function startAudio() {
 }
 
 
+function stopAudioCall() {
+    console.log("Chiusura della chiamata in corso...");
+
+    // 1. Ferma tutte le tracce del flusso locale (spegne il microfono)
+    if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+        localStream = null;
+    }
+
+    // 2. Chiudi la PeerConnection
+    if (peerConnection) {
+        // Rimuovi i listener per evitare trigger durante la chiusura
+        peerConnection.onicecandidate = null;
+        peerConnection.ontrack = null;
+
+        peerConnection.close();
+        peerConnection = null;
+    }
+
+    // 3. Pulisci l'elemento audio remoto
+    if (remoteAudio) {
+        remoteAudio.srcObject = null;
+    }
+
+    // 4. Invia un segnale al server per avvisare l'altro utente
+    sendSignal("hangup", { message: "La chiamata è terminata" });
+    
+    isCaller = false;
+}
+
+// Funzione di pulizia interna (senza invio segnale al socket)
+function terminateLocalStream() {
+    if (localStream) localStream.getTracks().forEach(track => track.stop());
+    if (peerConnection) peerConnection.close();
+    peerConnection = null;
+    localStream = null;
+    remoteAudio.srcObject = null;
+    isCaller = false;
+}
+
 function sendSignal(type, data) {
     gameSocket.emit(type, JSON.stringify(data));
 }
@@ -70,6 +110,8 @@ function createPeerConnection() {
         // Tentativo esplicito di avviare l'audio
     remoteAudio.play().catch(e => console.error("Errore autoplay:", e));
     };
+
+    
 }
 
 
@@ -106,8 +148,8 @@ let script = document.createElement("script");
     window.Module.callMain([]);
   }
   if(gameSocket === null){
-  gameSocket = io(`http://${window.location.hostname}:${port}`, {
-  //gameSocket = io(`wss://gameserver${port}.${window.location.hostname}`, {
+  //gameSocket = io(`http://${window.location.hostname}:${port}`, {
+  gameSocket = io(`wss://gameserver${port}${window.location.hostname}`, {
                   query: { roomID, nickname }
                 });
 
@@ -123,7 +165,7 @@ let script = document.createElement("script");
       locateFile: (file) => "/" + file,
       socket: null,
       RegisterSocketIOCallback: null,
-      exitGame: () => {setupDone = true; setScreen("lobby");},
+      exitGame: () => {setupDone = true; stopAudioCall(); setScreen("lobby");},
       onRuntimeInitialized: () => {
         window.Module.callMain([]); 
         setupDone = true;
@@ -221,6 +263,10 @@ let script = document.createElement("script");
         }
       });
 
+      gameSocket.on("hangup", (data) => {
+        console.log("L'altro utente ha chiuso la chiamata.");
+        terminateLocalStream(); 
+      });
 
       gameSocket.on("playerCount", async (playerCount) => {
         
