@@ -45,10 +45,10 @@ RT-Shooter è un gioco FPS multiplayer 1v1 che può essere giocato direttamente 
 
 ## Modalità di gioco
 
-### Sparatutto 1v1
+### Play 1v1
 
 
-![Shooter](./assets/sparatutto.png)
+![Shooter](./game-ui/public/assets/sparatutto.png)
 
 ---
 
