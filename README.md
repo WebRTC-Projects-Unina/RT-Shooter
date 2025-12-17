@@ -157,6 +157,39 @@ Questo approccio ci permette di mostrare come il gioco viene implementato inizia
 
 Se si volesse modificare la logica di gioco o qualsiasi pezzo di codice inerente al game engine è necessario effettuare le modifiche e poi ricompilare il tutto con **Emscripten**.
 
+## Architettura del Game Engine
+ 
+Il motore di gioco è strutturato in moduli ben definiti, ciascuno con responsabilità specifiche:
+ 
+### **Rendering Pipeline**
+- **OpenGL**: Gestisce il rendering 3D su GPU.
+- **Shader**: Implementato modello di illuminazione Blinn-Phong tramite GLSL.
+- **Dear ImGui**: librearia usata per la creazione della UI in-game per HUD, scoreboard, chat e menu renderizzati direttamente sul canvas OpenGL.
+ 
+### **Game Logic**
+- **Player System**: Due classi distinte:
+  - `ClientPlayer`: Gestisce input locale, fisica, collisioni e movimento del giocatore corrente.
+  - `RemotePlayer`: Rappresenta il nemico sincronizzato via WebSocket. (interpolazione di posizione e orientamento TBD)
+- **Collision Detection**: Sistema di collisioni con i muri basato sul algoritmo AABB (Axis-Aligned Bounding Box), e raycasting con AABB, con hitbox separate per testa e corpo, per gestire lo shooting.
+ 
+### **Asset Management**
+- **Modelli 3D**: Caricamento modelli 3D, senza supporto agli inici. I modelli devono essere esportati in formato `.obj` con singole facce triangoli separate tra loro (Edge Split modifier in Blender) e poi converite usando lo scirpt `convertitoreObj.py` prensente nella directory `./game/tools`.
+- **Texture Loading**: Caricamento file texture con stb_image e poi gestite da OpenGL.
+- **Map System**: Mappe generate proceduralmente a partire da un layout tile-based (creato con il software open Tiled) in formato JSON, da cui viene ricavata la posizone dei muri e degli spawnpoints.
+ 
+### **Comunicazione JavaScript ↔ C++**
+Il bridge tra il motore C++ e il frontend React avviene tramite **Emscripten Embind** e macro `EMSCRIPTEN_KEEPALIVE`:
+- **C++ → JavaScript**: Funzioni esportate come `sendPosizione()`, `sendChatMessage()`, `sendKillEvent()` per inviare eventi di gioco al room server.
+- **JavaScript → C++**: Callback esposte come `OnEnemyUpdate()`, `OnEnemyDied()`, `setupGame()` chiamate dal codice React/Socket.IO per aggiornare lo stato del motore.
+- **EM_JS Macro**: Permette di scrivere codice JavaScript inline nel C++ per accesso diretto a `Module.socket` e DOM.
+ 
+### **Tecnologie e Librerie**
+- **GLFW**: Gestione finestre, input da tastiera/mouse e context OpenGL.
+- **GLM**: Libreria matematica per operazioni vettoriali, matrici e trasformazioni 3D compatibili con OpenGL.
+- **Dear ImGui**: Liberia per GUI per interfacce in-game lightweight e performanti.
+- **stb_image**: Caricamento texture in vari formati (PNG, JPG).
+- **nlohmann/json**: Parsing file JSON.
+
 ## Installazione Emscripten
 
 Fermo restando che tutte le specifiche di **Emscripten** possono essere trovate nella seguente repository Github: https://github.com/Emscripten-core/emsdk.git
