@@ -47,12 +47,12 @@
     inline double oldFrame;
     inline unsigned int buffer;
 
-    inline float Ka = 1.0f, Kd = 1.0f, Ks = 5.0f ,shininess = 80.0f;
-    inline glm::vec3 lightPos(3.0f, 2.0f, 1.0f);
-    inline glm::vec3 ambientColor(1.0f, 0.4118f, 0.0f);      // #FF6900
-    inline glm::vec3 diffuseColor(1.0f, 0.4118f, 0.0f);      // #FF6900
-    inline glm::vec3 specularColor(1.0f, 1.0f, 1.0f);        // #FFFFFF
-    inline glm::vec3 backgroundColor(34.0f/255.0f, 34.0f/255.0f, 34.0f/255.0f); // rgba(34, 34, 34, 1)
+    inline float Ka = 1.0f, Kd = 1.0f, Ks = 1.0f ,shininess = 200.0f;
+    inline glm::vec3 lightPos(10.0f, 200.0f, 10.0f);
+    inline glm::vec3 ambientColor(1.0f, 1.0f, 1.0f);      
+    inline glm::vec3 diffuseColor(0.3f, 0.3f, 0.3f);     
+    inline glm::vec3 specularColor(128.0f/255.0f, 128.0f/255.0f, 128.0f/255.0f);        // #808080ff
+    inline glm::vec3 backgroundColor(135.0f/255.0f, 206.0f/255.0f, 235.0f/255.0f); // rgba(123, 168, 226, 1)
  
     inline bool diffuseEnable = true, ambientEnable = true, specularEnable = true;
 
