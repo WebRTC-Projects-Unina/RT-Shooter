@@ -73,6 +73,7 @@ RT-Shooter implementa una serie di feature avanzate per garantire un'esperienza 
 - **Node.js** : Ambiente di esecuzione JavaScript lato server, utilizzato per gestire il dispatcher del gioco.
 - **Socket\.IO** : Libreria per la comunicazione in tempo reale bidirezionale tra client e server, utilizzata per la sincronizzazione degli eventi di gioco.
 - **WASM** : WebAssembly, utilizzato per eseguire codice **C++** compilato ad alte prestazioni nel browser.
+- **OpenGL** : API multipiattaforma utilizzata per realizzare il rendering 3D del gioco in **C++**.
 - **CSS** : linguaggio di stile utilizzato per definire l'aspetto visivo dell'interfaccia utente.
 
 ---
@@ -514,5 +515,6 @@ RT-Shooter è stato sviluppato da:
 - **Francesco Gaetano Niutta** - [@fniutta](https://github.com/fniutta)
 
 Per contributi, segnalazioni di bug o suggerimenti, puoi aprire un'issue o una pull request nella [repository ufficiale](https://github.com/WebRTC-Projects-Unina/RT-Shooter).
+
 
 
